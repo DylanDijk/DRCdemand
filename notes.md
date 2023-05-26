@@ -44,3 +44,4 @@ $$
 
 What is meant by a function being distributed as a GP is that: 
 given a set of points in the domain $(x_1, \dots, x_n)$ a function $f$ being distributed as a GP, means that $(f(x_1), \dots, f(x_n))$ has a mvn distribution with mean given by the mean function evaluated at the data points and the covariance matrix given by the gram matrix evaluated at the points.
+
