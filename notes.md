@@ -30,3 +30,17 @@ Each row gives information on the time point that the data was retrieved. For ex
 - `survey` 
 2672 rows  
 Gives details about the households.
+
+
+# Gaussian process regression
+
+$$Y_i^0 = f(x_i^0) + \epsilon_i, \quad \epsilon_i \sim \mathcal{N}(0, \sigma^2) \quad f \sim GP(0,K) \quad \sigma^2 \sim \delta_{\lambda}$$
+
+$$
+f|y_{1:n}^0 \sim GP(f_n, K_n) \\
+f_n(x) = k_n(x)^T (K_n + \lambda I_n)^{-1} y_{1:n}^0 \\
+K_n(x,x') = k(x,x') - k_n(x)^T(K_n + \lambda I_n)^{-1}k_n(x')
+$$
+
+What is meant by a function being distributed as a GP is that: 
+given a set of points in the domain $(x_1, \dots, x_n)$ a function $f$ being distributed as a GP, means that $(f(x_1), \dots, f(x_n))$ has a mvn distribution with mean given by the mean function evaluated at the data points and the covariance matrix given by the gram matrix evaluated at the points.
