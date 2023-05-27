@@ -19,3 +19,13 @@ sumtrain_dt <- traindt[, lapply(.SD, sum), by = cluster]
 
 testdt <- data.table(merged_test)
 sumtest_dt <- testdt[, lapply(.SD, sum), by = cluster]
+
+# DOW to weekday and weekend
+library(forcats)
+extratest$dow <- fct_collapse(extratest$dow,
+                              Weekend = c('Sun', 'Sat'),
+                              Weekday = c('Mon', 'Tue', 'Wed', 'Thu', 'Fri'))
+
+extratrain$dow <- fct_collapse(extratrain$dow,
+                               Weekend = c('Sun', 'Sat'),
+                               Weekday = c('Mon', 'Tue', 'Wed', 'Thu', 'Fri'))
