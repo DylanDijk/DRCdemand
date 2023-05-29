@@ -57,4 +57,5 @@ Irish_adj_train$extra = Irish_adj_train$extra[!(as.Date(Irish_adj_train$extra$da
 
 save(Irish_adj_train, file = "data/Irish_adj_train.RData")
 save(Irish_adj_test, file = "data/Irish_adj_test.RData")
+save(test_ind, file = "data/test_dates.RData")
 
