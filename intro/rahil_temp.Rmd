@@ -52,24 +52,35 @@ one <- data.table(cbind(t(sumtrain_dt[1,-1]), extratrain$tod))
 
 one <- split(one$V1, as.factor(one$V2))
 
-one <- scale(as.data.table(one), center = TRUE, scale = FALSE)
+one <- as.data.table(one)[-326,]
 
 dum <- model.matrix(~ extratrain$dow - 1)
 
 dum <- dum[(1:nrow(dum)) %% 48 == 1,]
+
+#get extra data for TOD == 0
+ex <- extratrain[extratrain$tod == 0,]
+
 ```
 
 
 
 ```{r}
-# Combine the time series with the dummies
-X <- cbind(one, dum)
-  
-Y <- unlist(as.vector(X[,1]))
+# Combine t
+tY <- c(unlist(as.vector(one[,1])), 0)
 
-X <- as.matrix(X[,-1])
+tX <- rbind(matrix(rep(0, ncol(one)), nrow = 1), as.matrix(one))
 
+X <- cbind(tY, tX)[c(-1, -nrow(tX)),]
 
+X <- scale(X, center = TRUE, scale = TRUE)
+
+Y <- X[,1]
+
+X <- X[,-1]
+```
+
+```{r}
 stan_code <- "data {
   int<lower=0> N; // number of data items
   int<lower=0> K; // number of predictors
@@ -115,51 +126,12 @@ fit <- stan(model_code = stan_code, data = stan_data, iter = 2000, chains = 4)
 
 ```{r}
 posterior <- extract(fit)
-plot(posterior$beta[,1], type = 'l')
-plot(posterior$beta[,49], type = 'l')
+stan_dens(fit, pars =  (dimnames(fit)[3])$parameters[1:51])
 ```
 
 
 ```{r}
 plot(Y)
-lines(rowMeans(posterior$y_rep))
-```
-
-
-
-```{r}
-#install.packages("future")
-#install.packages("furrr")
-library(future)
-library(furrr)
-
-# Set up a parallel backend
-plan(multisession)
-
-
-# Define a function to fit one model
-fit_model <- function(i) {
-  # Extract the relevant time series
-  Y <- sumtrain_dt[i,-1]
-  
-  # Combine the time series with the dummies
-  X <- cbind(Y, dum)
-  
-  # Data for Stan
-  stan_data <- list(
-    N = length(Y),
-    K = ncol(X),
-    x = X,
-    y = Y
-  )
-  
-  # Compile and fit the model
-  fit <- stan(model_code = stan_code, data = stan_data, iter = 2000, chains = 4)
-  
-  # Return the fit
-  return(fit)
-}
-
-
+lines(colMeans(posterior$y_rep))
 ```
 
