@@ -54,15 +54,11 @@ one <- split(one$V1, as.factor(one$V2))
 
 one <- as.data.table(one)[-326,]
 
-dum <- model.matrix(~ extratrain$dow - 1)
-
-dum <- dum[(1:nrow(dum)) %% 48 == 1,]
-
 #get extra data for TOD == 0
 ex <- extratrain[extratrain$tod == 0,]
 
+dum <- model.matrix(~ ex$dow - 1)
 ```
-
 
 
 ```{r}
@@ -73,12 +69,56 @@ tX <- rbind(matrix(rep(0, ncol(one)), nrow = 1), as.matrix(one))
 
 X <- cbind(tY, tX)[c(-1, -nrow(tX)),]
 
-X <- scale(X, center = TRUE, scale = TRUE)
+X <- cbind(X, ex$toy[-1], ex$temp[-1])
+
+X <- scale(X, center = TRUE, scale = FALSE)
+
+X <- cbind(X, dum[-1,])
 
 Y <- X[,1]
 
 X <- X[,-1]
 ```
+
+
+```{r}
+dataprocess <- function(cluster, time, sumdata, extra){
+  
+  t <- data.table(cbind(t(sumdata[cluster,-1]), extra$tod))
+  
+  t <- split(t$V1, as.factor(t$V2))
+  
+  t <- as.data.table(t)[-326,]
+  
+  ex <- extra[extra$tod == time,]
+  
+  dum <- model.matrix(~ ex$dow - 1)
+  
+  tY <- c(unlist(as.vector(t[,1])), 0)
+
+  tX <- rbind(matrix(rep(0, ncol(t)), nrow = 1), as.matrix(t))
+  
+  X <- cbind(tY, tX)[c(-1, -nrow(tX)),]
+
+  X <- cbind(X, ex$toy[-1], ex$temp[-1])
+  
+  means <- colMeans(X)
+
+  X <- scale(X, center = TRUE, scale = FALSE)
+  
+  X <- cbind(X, dum[-1,])
+
+  Y <- X[,1]
+
+  X <- X[,-1]
+  
+  slr <- list(modelM = X, response = Y, colmean = means)
+  
+  class(slr) <- 'datap'
+  return(slr)
+}
+```
+
 
 ```{r}
 stan_code <- "data {
@@ -126,12 +166,17 @@ fit <- stan(model_code = stan_code, data = stan_data, iter = 2000, chains = 4)
 
 ```{r}
 posterior <- extract(fit)
-stan_dens(fit, pars =  (dimnames(fit)[3])$parameters[1:51])
+stan_dens(fit, pars =  (dimnames(fit)[3])$parameters[1:25])
+stan_dens(fit, pars =  (dimnames(fit)[3])$parameters[25:51])
+plot(posterior$beta[,5], type = 'l')
 ```
 
 
 ```{r}
 plot(Y)
 lines(colMeans(posterior$y_rep))
+```
+```{r}
+
 ```
 
