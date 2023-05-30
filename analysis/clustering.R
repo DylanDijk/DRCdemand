@@ -7,17 +7,36 @@ survey <- Irish_adj$survey
 
 load("data/Irish_adj_train.RData")
 indCons_train <- Irish_adj_train$indCons
+# Replace meanDem with that calculated for training data only
 survey <- survey %>%
-  mutate(meanDem.train = colMeans(indCons_train))
+  mutate(meanDem = colMeans(indCons_train))
+
+extra <- Irish_adj_train$extra
+weekly_profile <- cbind(indCons_train, tod = extra$tod, dow = extra$dow) %>%
+  pivot_longer(cols = starts_with("I"),
+               names_to = "ID",
+               values_to = "demand") %>%
+  group_by(tod, dow, ID) %>%
+  summarise(avg_demand = mean(demand)) %>%
+  mutate(todow = as.factor(paste0(tod,dow))) %>%
+  ungroup() %>%
+  select(-c(tod,dow)) %>%
+  pivot_wider(names_from = todow, values_from = avg_demand)
+
+surveydem <- left_join(survey, weekly_profile)
+dem <- left_join(survey[,c(1,2)], weekly_profile)
 
 ### Hierarchical clustering using complete linkage
 set.seed(1)
-hc_all <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2)]),
-                        method="complete")
-hc_fixed <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2,12)]),
-                          method="complete")
-hc_dem <- stats::hclust(DRCdemand::gowers_distance(survey[,12]),
-                          method="complete")
+# Using all data, survey and weekly and mean
+hc_all <- stats::hclust(DRCdemand::gowers_distance(surveydem[,-1]),
+                        method = "complete")
+# Using only survey data, nothing on weekly profile or mean demand
+hc_fixed <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2)]),
+                          method = "complete")
+# Using only demand data, weekly and mean, no survey information
+hc_dem <- stats::hclust(DRCdemand::gowers_distance(dem[,-1]),
+                        method = "complete")
 
 # Generate individual data frames with clustering IDs and large data frame
 hcdf <- data.frame(ID = survey$ID)
@@ -40,21 +59,20 @@ for(num_clust in 2^(0:9)){
 colnames(hcdf) <- varnames
 save(hcdf, file = "data/clusters/hclust.Rdata")
 
-## k-means clustering using meanDem.train
+## k-means clustering using only weekly profiles and mean demand
 # Generate individual data frames with clustering IDs and large data frame
 set.seed(1)
 kmdf <- data.frame(ID = survey$ID)
 varnames <- colnames(kmdf)
 for(num_clust in 2^(0:9)){
-  km <- survey %>%
-    select(meanDem.train) %>%
-    kmeans(centers = num_clust)
+  km <- dem[,-1] %>%
+    kmeans(centers = num_clust, algorithm = "Lloyd", nstart = 5)
   kmdf <- cbind(kmdf,
                 as.factor(km$cluster))
   varnames <- cbind(varnames,
                     paste0("cluster",num_clust,"dem"))
   kmdf_ind <- data.frame(ID = survey$ID,
-                     cluster_all = as.factor(km$cluster))
+                     cluster_dem = as.factor(km$cluster))
   save(kmdf_ind, file = paste0("data/clusters/kmeans",num_clust,".Rdata"))
 }
 colnames(kmdf) <- varnames
