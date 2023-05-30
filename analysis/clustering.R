@@ -16,6 +16,8 @@ hc_all <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2)]),
                         method="complete")
 hc_fixed <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2,12)]),
                           method="complete")
+hc_dem <- stats::hclust(DRCdemand::gowers_distance(survey[,12]),
+                          method="complete")
 
 # Generate individual data frames with clustering IDs and large data frame
 hcdf <- data.frame(ID = survey$ID)
@@ -23,13 +25,16 @@ varnames <- colnames(hcdf)
 for(num_clust in 2^(0:9)){
   hcdf <- cbind(hcdf,
               as.factor(stats::cutree(hc_all, k = num_clust)),
-              as.factor(stats::cutree(hc_fixed, k = num_clust)))
+              as.factor(stats::cutree(hc_fixed, k = num_clust)),
+              as.factor(stats::cutree(hc_dem, k = num_clust)))
   varnames <- cbind(varnames,
                     paste0("cluster",num_clust,"all"),
-                    paste0("cluster",num_clust,"fixed"))
+                    paste0("cluster",num_clust,"fixed"),
+                    paste0("cluster",num_clust,"dem"))
   hcdf_ind <- data.frame(ID = survey$ID,
                    cluster_all = as.factor(stats::cutree(hc_all, k = num_clust)),
-                   cluster_fixed = as.factor(stats::cutree(hc_fixed, k = num_clust)))
+                   cluster_fixed = as.factor(stats::cutree(hc_fixed, k = num_clust)),
+                   cluster_dem = as.factor(stats::cutree(hc_dem, k = num_clust)))
   save(hcdf_ind, file = paste0("data/clusters/hclust",num_clust,".Rdata"))
 }
 colnames(hcdf) <- varnames
@@ -47,7 +52,7 @@ for(num_clust in 2^(0:9)){
   kmdf <- cbind(kmdf,
                 as.factor(km$cluster))
   varnames <- cbind(varnames,
-                    paste0("cluster",num_clust,"all"))
+                    paste0("cluster",num_clust,"dem"))
   kmdf_ind <- data.frame(ID = survey$ID,
                      cluster_all = as.factor(km$cluster))
   save(kmdf_ind, file = paste0("data/clusters/kmeans",num_clust,".Rdata"))
