@@ -4,6 +4,8 @@
 # DRCdemand
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/DylanDijk/DRCdemand/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DylanDijk/DRCdemand/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of DRCdemand is to …
