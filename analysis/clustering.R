@@ -1,4 +1,5 @@
 library(tidyverse)
+library(DRCdemand)
 
 # Load data
 load("data/Irish_adj.RData")
@@ -9,20 +10,11 @@ indCons_train <- Irish_adj_train$indCons
 survey <- survey %>%
   mutate(meanDem.train = colMeans(indCons_train))
 
-# Calculate gowers distance
-gowers_distance <- function(data){
-  n <- nrow(data)
-  gowers_dist_mat <- matrix(0, nrow=n, ncol=n)
-  for(i in 1:n){
-    gowers_dist_mat[,i] <- gower::gower_dist(data[i,],data[,])
-  }
-  gowers_dist <- as.dist(gowers_dist_mat)
-  return(gowers_dist)
-}
-
 # Hierarchical clustering using complete linkage
-hc_all <- hclust(gowers_distance(survey[,-c(1,2)]), method="complete")
-hc_fixed <- hclust(gowers_distance(survey[,-c(1,2,12)]), method="complete")
+hc_all <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2)]),
+                        method="complete")
+hc_fixed <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2,12)]),
+                          method="complete")
 
 # Generate individual data frames with clustering IDs
 for(num_clust in 2^(0:9)){
