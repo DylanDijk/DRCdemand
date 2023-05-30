@@ -11,32 +11,29 @@ survey <- survey %>%
   mutate(meanDem.train = colMeans(indCons_train))
 
 ### Hierarchical clustering using complete linkage
+set.seed(1)
 hc_all <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2)]),
                         method="complete")
 hc_fixed <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2,12)]),
                           method="complete")
 
-# Generate individual data frames with clustering IDs
+# Generate individual data frames with clustering IDs and large data frame
+hcdf <- data.frame(ID = survey$ID)
+varnames <- colnames(hcdf)
 for(num_clust in 2^(0:9)){
-  hc <- data.frame(ID = survey$ID,
-                   cluster_all = as.factor(cutree(hc_all, k = num_clust)),
-                   cluster_fixed = as.factor(cutree(hc_fixed, k = num_clust)))
-  save(hc, file = paste0("data/clusters/hclust",num_clust,".Rdata"))
-}
-
-# Generate large data frame with all clustering
-hc <- data.frame(ID = survey$ID)
-varnames <- colnames(hc)
-for(num_clust in 2^(0:9)){
-  hc <- cbind(hc,
+  hcdf <- cbind(hcdf,
               as.factor(stats::cutree(hc_all, k = num_clust)),
               as.factor(stats::cutree(hc_fixed, k = num_clust)))
   varnames <- cbind(varnames,
                     paste0("cluster",num_clust,"all"),
                     paste0("cluster",num_clust,"fixed"))
+  hcdf_ind <- data.frame(ID = survey$ID,
+                   cluster_all = as.factor(stats::cutree(hc_all, k = num_clust)),
+                   cluster_fixed = as.factor(stats::cutree(hc_fixed, k = num_clust)))
+  save(hcdf_ind, file = paste0("data/clusters/hclust",num_clust,".Rdata"))
 }
-colnames(hc) <- varnames
-save(hc, file = "data/clusters/hclust.Rdata")
+colnames(hcdf) <- varnames
+save(hcdf, file = "data/clusters/hclust.Rdata")
 
 ## k-means clustering using meanDem.train
 # Generate individual data frames with clustering IDs and large data frame
