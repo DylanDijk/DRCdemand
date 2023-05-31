@@ -59,25 +59,6 @@ for(num_clust in 2^(0:9)){
 colnames(hcdf) <- varnames
 save(hcdf, file = "data/clusters/hclust.Rdata")
 
-## k-means clustering using only weekly profiles and mean demand
-# Generate individual data frames with clustering IDs and large data frame
-set.seed(1)
-kmdf <- data.frame(ID = survey$ID)
-varnames <- colnames(kmdf)
-for(num_clust in 2^(0:9)){
-  km <- dem[,-1] %>%
-    kmeans(centers = num_clust, algorithm = "Lloyd", nstart = 5)
-  kmdf <- cbind(kmdf,
-                as.factor(km$cluster))
-  varnames <- cbind(varnames,
-                    paste0("cluster",num_clust,"dem"))
-  kmdf_ind <- data.frame(ID = survey$ID,
-                     cluster_dem = as.factor(km$cluster))
-  save(kmdf_ind, file = paste0("data/clusters/kmeans",num_clust,".Rdata"))
-}
-colnames(kmdf) <- varnames
-save(kmdf, file = "data/clusters/kmeans.Rdata")
-
 ## Random clustering
 set.seed(1)
 rand <- data.frame(ID = survey$ID)
