@@ -1,6 +1,11 @@
 library(tidyverse)
 library(lubridate)
-load(file = "data/Irish.RData")
+if( !require(electBook) ){
+  library(devtools)
+  install_github("mfasiolo/electBook")
+}
+library(electBook)
+data("Irish")
 
 # Shift dateTime column by one hour
 Irish_adj = Irish
@@ -10,7 +15,7 @@ Irish_adj$extra$dateTime = Irish$extra$dateTime + 60*60
 Irish_adj$extra$toy = as.numeric(format(Irish_adj$extra$dateTime, "%j")) /365
 # Irish_adj$extra$dateTime[4081:4085]
 # make tod between 0 and 1
-# Irish_adj$extra$tod = sin((pi*Irish_adj$extra$tod)/24) 
+# Irish_adj$extra$tod = sin((pi*Irish_adj$extra$tod)/24)
 # keep tod as it is for now
 
 
