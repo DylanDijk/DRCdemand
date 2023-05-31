@@ -24,3 +24,20 @@ test_that("Gower's distance function calculates the distance matrix correctly", 
   expect_equivalent(output, expected_output)
 })
 
+# Unit test for weekly profiling
+# Define the function to be tested
+test_that("weekly_profile input validation test", {
+  # Create a valid input list for testing
+  valid_input <- list(
+    extra = data.frame(tod = c(1, 2, 1, 2), dow = c("Mon", "Tue", "Mon", "Mon")),
+    indCons = data.frame(I1002 = c(1, 10, 20, 30), I1003 = c(40, 50, 60, 70))
+  )
+
+  expected_output <- tibble::tibble(ID = c("I1002","I1003"), `1Mon` = c(10.5,50), `2Mon` = c(30,70), `2Tue` = c(10,50))
+
+  # Test if the function returns correct output for a valid input
+  expect_equivalent(DRCdemand::weekly_profile(valid_input), expected_output)
+
+  # Test if the function raises an error for an invalid input
+  expect_error(weekly_profile(list()))
+})

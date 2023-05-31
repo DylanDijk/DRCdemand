@@ -2,16 +2,21 @@ library(tidyverse)
 library(DRCdemand)
 
 # Load data
-load("data/Irish_adj.RData")
+data("Irish_adj_train")
+data("Irish_adj")
+
 survey <- Irish_adj$survey
 
 load("data/Irish_adj_train.RData")
 indCons_train <- Irish_adj_train$indCons
+
 # Replace meanDem with that calculated for training data only
 survey <- survey %>%
   mutate(meanDem = colMeans(indCons_train))
 
 extra <- Irish_adj_train$extra
+
+# Calculate the weekly profile of each household (average demand at each tod at each dow)
 weekly_profile <- cbind(indCons_train, tod = extra$tod, dow = extra$dow) %>%
   pivot_longer(cols = starts_with("I"),
                names_to = "ID",
@@ -60,6 +65,7 @@ colnames(hcdf) <- varnames
 save(hcdf, file = "data/clusters/hclust.Rdata")
 
 ## Random clustering
+# Generate individual data frames with clustering IDs and large data frame
 set.seed(1)
 rand <- data.frame(ID = survey$ID)
 varnames <- colnames(rand)
