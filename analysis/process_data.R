@@ -20,7 +20,7 @@ Irish_adj$extra$toy = as.numeric(format(Irish_adj$extra$dateTime, "%j")) /365
 
 
 # Format survey data
-Irish_adj$survey <- as_tibble(Irish$survey) %>%
+Irish_adj$survey <- tibble::as_tibble(Irish$survey) %>%
   readr::type_convert(
     col_types = list(
       OWNERSHIP = readr::col_factor(),

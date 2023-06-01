@@ -17,19 +17,10 @@ survey <- survey %>%
 extra <- Irish_adj_train$extra
 
 # Calculate the weekly profile of each household (average demand at each tod at each dow)
-weekly_profile <- cbind(indCons_train, tod = extra$tod, dow = extra$dow) %>%
-  pivot_longer(cols = starts_with("I"),
-               names_to = "ID",
-               values_to = "demand") %>%
-  group_by(tod, dow, ID) %>%
-  summarise(avg_demand = mean(demand)) %>%
-  mutate(todow = as.factor(paste0(tod,dow))) %>%
-  ungroup() %>%
-  select(-c(tod,dow)) %>%
-  pivot_wider(names_from = todow, values_from = avg_demand)
+weekly_profile <- DRCdemand::weekly_profile(Irish_adj_train)
 
-surveydem <- left_join(survey, weekly_profile)
-dem <- left_join(survey[,c(1,2)], weekly_profile)
+surveydem <- dplyr::left_join(survey, weekly_profile)
+dem <- dplyr::left_join(survey[,c(1,2)], weekly_profile)
 
 ### Hierarchical clustering using complete linkage
 set.seed(1)
