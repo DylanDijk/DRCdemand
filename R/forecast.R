@@ -211,7 +211,7 @@ estimate <- function(sumobj, modelsclusttype, cluster){
   
   colmeans <- dobj$colmean
   
-  truevalue <- modelmTest(sumobj, cluster, colmeans, 0)$Testing
+  truevalue <- modelmTest(sumobj, cluster, 0)$Testing
   
   estimate <- matrix(nrow = 24, ncol = 0)
   
@@ -222,7 +222,7 @@ estimate <- function(sumobj, modelsclusttype, cluster){
   for (i in (1:48)){
     post <- extract(modelsclusttype[[cluster]][[i + 1]])
     
-    tobj <- modelmTest(sumobj, cluster, colmeans, i - 1)
+    tobj <- modelmTest(sumobj, cluster, i - 1)
     
     # Compute the 95% credible interval for each parameter
     lwr <- as.matrix(apply(post$beta, 2, quantile, probs = 0.025), ncol = 1)  # lower bound
