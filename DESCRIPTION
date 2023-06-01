@@ -17,6 +17,8 @@ Config/testthat/edition: 3
 Imports: 
     dplyr,
     gower,
-    magrittr,
     stats,
     tidyr
+Depends: 
+    foreach,
+    magrittr
