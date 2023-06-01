@@ -1,13 +1,11 @@
 library(tidyverse)
 library(DRCdemand)
 
-# Load data
-data("Irish_adj_train")
-data("Irish_adj")
+# Load processed data
+load("data/Irish_adj_train.RData")
+load("data/Irish_adj.RData")
 
 survey <- Irish_adj$survey
-
-load("data/Irish_adj_train.RData")
 indCons_train <- Irish_adj_train$indCons
 
 # Replace meanDem with that calculated for training data only
@@ -60,7 +58,7 @@ for(num_clust in 2^(0:9)){
 colnames(hcdf) <- varnames
 save(hcdf, file = "data/clusters/hclust.Rdata")
 
-## Random clustering
+### Random clustering
 # Generate individual data frames with clustering IDs and large data frame
 set.seed(1)
 rand <- data.frame(ID = survey$ID)
