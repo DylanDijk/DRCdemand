@@ -4,12 +4,18 @@
 \name{DRCdemand-package}
 \alias{DRCdemand}
 \alias{DRCdemand-package}
-\title{DRCdemand: What the Package Does (One Line, Title Case)}
+\title{DRCdemand: Forecasting of Irish Electricity Data}
 \description{
-What the package does (one paragraph).
+Provides functions to aid analysis of the Irish electricity demand data set, including functions for clustering and forecasting.
 }
 \author{
-\strong{Maintainer}: First Last \email{first.last@example.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Codie Wood \email{codie.wood@bristol.ac.uk}
+
+Authors:
+\itemize{
+  \item Dylan Dijk \email{zl22291@bristol.ac.uk}
+  \item Rahil Morjaria \email{kl18909@bristol.ac.uk}
+}
 
 }
 \keyword{internal}
