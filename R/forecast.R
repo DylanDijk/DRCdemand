@@ -195,7 +195,7 @@ modelmTest <- function(sumobj, cluster, time){
   return(slr)
 }
 
-#' Mean Estimated Data
+#' Mean Estimated Data 
 #'
 #' @param sumobj 'sumobj' from clustersum()
 #' @param modelsclusttype list of models from certain clustering method
@@ -204,33 +204,51 @@ modelmTest <- function(sumobj, cluster, time){
 #' @return Column Means, Estimate (centered), True Value. Class 'estobj'
 #' @export
 #'
+#' @examples
 estimate <- function(sumobj, modelsclusttype, cluster){
-
+  
   dobj <- dataprocess(sumobj, cluster, 0)
-
+  
   colmeans <- dobj$colmean
-
-  truevalue <- modelmTest(sumobj, cluster, 0)$Testing
-
+  
+  truevalue <- modelmTest(sumobj, cluster, colmeans, 0)$Testing
+  
   estimate <- matrix(nrow = 24, ncol = 0)
+  
+  lowci <- matrix(nrow = 24, ncol = 0)
+  
+  upci <- matrix(nrow = 24, ncol = 0)
+  
   for (i in (1:48)){
-    post <- extract(modelsclusttype[[i + (cluster-1)*48]])
-
-    tobj <- modelmTest(sumobj, cluster, i - 1)
-
+    post <- extract(modelsclusttype[[cluster]][[i + 1]])
+    
+    tobj <- modelmTest(sumobj, cluster, colmeans, i - 1)
+    
+    # Compute the 95% credible interval for each parameter
+    lwr <- as.matrix(apply(post$beta, 2, quantile, probs = 0.025), ncol = 1)  # lower bound
+    
+    upr <- as.matrix(apply(post$beta, 2, quantile, probs = 0.975), ncol = 1)  # upper bound
+    
     modelTest <- tobj$predM
-
+    
     meanbeta <- as.matrix(colMeans(post$beta), ncol = 1)
-
+    
+    low <- modelTest %*% lwr
+    
+    up <- modelTest %*% upr
+    
     est <- modelTest %*% meanbeta
-
+    
     estimate <- cbind(estimate, est)
+    
+    lowci <- cbind(lowci, low)
+    upci <- cbind(upci, up)
   }
-
-  slr <- list(colmean = colmeans, est = estimate, trueval = truevalue)
-
+  
+  slr <- list(colmean = colmeans, est = estimate, trueval = truevalue, upperci = upci, lowerci = lowci)
+  
   class(slr) = 'estobj'
-
+  
   return(slr)
   }
 
@@ -242,27 +260,37 @@ estimate <- function(sumobj, modelsclusttype, cluster){
 #' @return ggplot of estimate and true values, RMSE, and data frame with estimate for day and true value (not centered). Class 'plotobj'
 #' @export
 #'
+#' @examples
 plotpred <- function(estobj, day){
-
+  
   colmeans <- estobj$colmean
-
+  
   estimates <- estobj$est
-
-  testing = estobj$trueval
-
+  
+  testing <- estobj$trueval
+  
+  upper <- estobj$upperci
+  
+  lower <- estobj$lowerci
+  
   dayest <- matrix(estimates[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
-
+  
+  lowest <- matrix(lower[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
+  
+  upest <- matrix(upper[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
+  
   truday <- t(testing[day,])
-
-  plotdf <- as.data.frame(cbind(1:ncol(testing), truday, dayest))
-
+  
+  plotdf <- as.data.frame(cbind(1:ncol(testing), truday, dayest, lowest, upest))
+  
   rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
-
-  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = V1, y = plotdf[,2])) + ggplot2::geom_point(ggplot2::aes(x = V1, y = (plotdf[,3]), col = 'est'))
-
+  
+  plotted <- ggplot(plotdf) + geom_point(aes(x = V1, y = plotdf[,2])) + geom_point(aes(x = V1, y = (plotdf[,3]), col = 'est')) +
+    geom_point(aes(x = V1, y = plotdf[,4], 'lower')) + geom_point(aes(x = V1, y = (plotdf[,5]), col = 'upper'))
+  
   slr <- list(plot = plotted, RMSE = rmse, dayDF = plotdf)
-
+  
   class(slr) = 'plotobj'
-
+  
   return(slr)
 }
