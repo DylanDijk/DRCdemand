@@ -11,14 +11,32 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Suggests: 
+    ggplot2,
     testthat (>= 3.0.0),
     tibble
 Config/testthat/edition: 3
 Imports: 
+    data.table,
     dplyr,
+    forcats,
     gower,
+    methods,
+    Rcpp,
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    rstantools (>= 2.3.1),
     stats,
     tidyr
 Depends: 
     foreach,
-    magrittr
+    magrittr,
+    R (>= 3.4.0)
+Biarch: true
+LinkingTo: 
+    BH (>= 1.66.0),
+    Rcpp,
+    RcppEigen (>= 0.3.3.3.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
+SystemRequirements: GNU make
