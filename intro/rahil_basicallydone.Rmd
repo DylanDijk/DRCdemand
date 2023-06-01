@@ -244,24 +244,41 @@ estimate <- function(sumobj, modelsclusttype, cluster){
   
   colmeans <- dobj$colmean
   
-  truevalue <- modelmTest(sumobj, cluster, 0)$Testing
+  truevalue <- modelmTest(sumobj, cluster, colmeans, 0)$Testing
   
   estimate <- matrix(nrow = 24, ncol = 0)
+  
+  lowci <- matrix(nrow = 24, ncol = 0)
+  
+  upci <- matrix(nrow = 24, ncol = 0)
+  
   for (i in (1:48)){
-    post <- extract(modelsclusttype[[cluster]][[i]])
+    post <- extract(modelsclusttype[[i + (cluster-1)*48]])
     
-    tobj <- modelmTest(sumobj, cluster, i - 1)
+    tobj <- modelmTest(sumobj, cluster, colmeans, i - 1)
+    
+    # Compute the 95% credible interval for each parameter
+    lwr <- as.matrix(apply(post$beta, 2, quantile, probs = 0.025), ncol = 1)  # lower bound
+    
+    upr <- as.matrix(apply(post$beta, 2, quantile, probs = 0.975), ncol = 1)  # upper bound
     
     modelTest <- tobj$predM
     
     meanbeta <- as.matrix(colMeans(post$beta), ncol = 1)
     
+    low <- modelTest %*% lwr
+    
+    up <- modelTest %*% upr
+    
     est <- modelTest %*% meanbeta
     
     estimate <- cbind(estimate, est)
+    
+    lowci <- cbind(lowci, low)
+    upci <- cbind(upci, up)
   }
   
-  slr <- list(colmean = colmeans, est = estimate, trueval = truevalue)
+  slr <- list(colmean = colmeans, est = estimate, trueval = truevalue, upperci = upci, lowerci = lowci)
   
   class(slr) = 'estobj'
   
@@ -284,17 +301,26 @@ plotpred <- function(estobj, day){
   
   estimates <- estobj$est
   
-  testing = estobj$trueval
+  testing <- estobj$trueval
+  
+  upper <- estobj$upperci
+  
+  lower <- estobj$lowerci
   
   dayest <- matrix(estimates[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
   
+  lowest <- matrix(lower[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
+  
+  upest <- matrix(upper[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
+  
   truday <- t(testing[day,])
   
-  plotdf <- as.data.frame(cbind(1:ncol(testing), truday, dayest))
+  plotdf <- as.data.frame(cbind(1:ncol(testing), truday, dayest, lowest, upest))
   
   rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
   
-  plotted <- ggplot(plotdf) + geom_point(aes(x = V1, y = plotdf[,2])) + geom_point(aes(x = V1, y = (plotdf[,3]), col = 'est'))
+  plotted <- ggplot(plotdf) + geom_point(aes(x = V1, y = plotdf[,2])) + geom_point(aes(x = V1, y = (plotdf[,3]), col = 'est')) +
+    geom_point(aes(x = V1, y = plotdf[,4], 'lower')) + geom_point(aes(x = V1, y = (plotdf[,5]), col = 'upper'))
   
   slr <- list(plot = plotted, RMSE = rmse, dayDF = plotdf)
   
@@ -549,6 +575,7 @@ estimateclust2 <- estimate(hc4models, 2, sumdo)
 ar <- plotpred(estimateclust2, 24)
 ar$plot
 ```
+
 ```{r}
 cl <- makeCluster(4)
 
@@ -578,6 +605,7 @@ stopCluster(cl)
 ```{r}
 p <- estimate(sumdo, clustmodeltest, 4)
 ```
+
 ```{r}
 pl <- plotpred(p, 1)
 ```
