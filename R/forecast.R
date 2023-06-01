@@ -210,13 +210,13 @@ estimate <- function(sumobj, modelsclusttype, cluster){
 
   colmeans <- dobj$colmean
 
-  truevalue <- modelmTest(sumobj, cluster, colmeans, 0)$Testing
+  truevalue <- modelmTest(sumobj, cluster, 0)$Testing
 
   estimate <- matrix(nrow = 24, ncol = 0)
   for (i in (1:48)){
     post <- extract(modelsclusttype[[i + (cluster-1)*48]])
 
-    tobj <- modelmTest(sumobj, cluster, colmeans, i - 1)
+    tobj <- modelmTest(sumobj, cluster, i - 1)
 
     modelTest <- tobj$predM
 
