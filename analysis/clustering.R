@@ -11,8 +11,10 @@ load("data/Irish_adj_train.RData")
 indCons_train <- Irish_adj_train$indCons
 
 # Replace meanDem with that calculated for training data only
+# Scale and center cts variables
 survey <- survey %>%
-  mutate(meanDem = colMeans(indCons_train))
+  mutate(meanDem = scale(colMeans(indCons_train))[,1],
+         BUILT.YEAR = scale(BUILT.YEAR)[,1])
 
 extra <- Irish_adj_train$extra
 
@@ -25,13 +27,16 @@ dem <- dplyr::left_join(survey[,c(1,2)], weekly_profile)
 ### Hierarchical clustering using complete linkage
 set.seed(1)
 # Using all data, survey and weekly and mean
-hc_all <- stats::hclust(DRCdemand::gowers_distance(surveydem[,-1]),
+gd_all <- DRCdemand::gowers_distance(surveydem[,-1])
+hc_all <- stats::hclust(gd_all,
                         method = "complete")
 # Using only survey data, nothing on weekly profile or mean demand
-hc_fixed <- stats::hclust(DRCdemand::gowers_distance(survey[,-c(1,2)]),
+gd_fixed <- DRCdemand::gowers_distance(survey[,-c(1,2)])
+hc_fixed <- stats::hclust(gd_fixed,
                           method = "complete")
 # Using only demand data, weekly and mean, no survey information
-hc_dem <- stats::hclust(DRCdemand::gowers_distance(dem[,-1]),
+gd_dem <- DRCdemand::gowers_distance(dem[,-1])
+hc_dem <- stats::hclust(gd_dem,
                         method = "complete")
 
 # Generate individual data frames with clustering IDs and large data frame
