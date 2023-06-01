@@ -9,7 +9,9 @@
 [![test-coverage](https://github.com/DylanDijk/DRCdemand/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/DylanDijk/DRCdemand/actions/workflows/test-coverage.yaml)
 <!-- badges: end -->
 
-The goal of DRCdemand is to …
+The goal of DRCdemand is to aid in the analysis of the Irish electricity
+demand data set. Namely, we provide functions to perform clustering,
+forecasting and model aggregation.
 
 ## Installation
 
@@ -23,36 +25,21 @@ devtools::install_github("DylanDijk/DRCdemand")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example which shows you how to compute Gower’s
+dissimilarity matrix:
 
 ``` r
 library(DRCdemand)
-## basic example code
+#> Loading required package: foreach
+#> Loading required package: magrittr
+data <- data.frame(
+  V1 = c(1, 2, 3),
+  V2 = c(4, 5, 6),
+  V3 = c(7, 8, 9),
+  V4 = as.factor(c(1, 1, 2))
+)
+gowers_distance(data)
+#>       1     2
+#> 2 0.375      
+#> 3 1.000 0.625
 ```
-
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
-
-``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
-```
-
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this. You could also
-use GitHub Actions to re-render `README.Rmd` every time you push. An
-example workflow can be found here:
-<https://github.com/r-lib/actions/tree/v1/examples>.
-
-You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.
