@@ -92,3 +92,11 @@ hc4allmodels <- parLapply(cl,1:4, function(x){parfit(sumobj4all, stan_code, x, 2
 stopCluster(cl)
 ```
 
+```{r}
+library(parallel)
+library(DRCdemand)
+load("../data/clusters/tmp/sumobj4.Rdata")
+sumobj4all <- sumobj4$all
+hc4allmodels <- mclapply(1:4, function(x){parfit(sumobj4all, stan_code, x, 1)}, 4)
+```
+
