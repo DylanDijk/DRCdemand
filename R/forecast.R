@@ -52,6 +52,14 @@ clustersum <- function(training, testing, clustdat, clustcol){
   testdt <- data.table::data.table(merged_test)
   sumtest_dt <- testdt[, lapply(.SD, sum), by = 'cluster']
 
+  extratest$dow <- forcats::fct_collapse(extratest$dow,
+                                Weekend = c('Sun', 'Sat'),
+                                Weekday = c('Mon', 'Tue', 'Wed', 'Thu', 'Fri'))
+
+  extratrain$dow <- forcats::fct_collapse(extratrain$dow,
+                                 Weekend = c('Sun', 'Sat'),
+                                 Weekday = c('Mon', 'Tue', 'Wed', 'Thu', 'Fri'))
+
   sls <- list(sumtrain = sumtrain_dt, sumtest = sumtest_dt, extrain = extratrain, extest = extratest)
   class(sls) = 'sumobj'
 
@@ -91,15 +99,11 @@ dataprocess <- function(sumobj, cluster, time){
 
   tY <- c(unlist(as.vector(one[,..yat])), 0)
 
-  Z <- cbind(tY, tX)[c(-1, -nrow(tX)),]
+  X <- cbind(tY, tX)[c(-1, -nrow(tX)),]
 
-  Z <- cbind(Z, ex$toy[-1], ex$temp[-1])
+  X <- cbind(X, ex$toy[-1], ex$temp[-1])
 
-  means <- colMeans(Z)
-
-  X <- cbind(tY, tX[, yat])[c(-1, -nrow(tX)),]	
-
-  X <- cbind(X, ex$toy[-1], ex$temp[-1])	
+  means <- colMeans(X)
 
   X <- scale(X, center = TRUE, scale = FALSE)
 
@@ -201,8 +205,6 @@ modelmTest <- function(sumobj, cluster, time){
 
   modelTest <- t(t(modelTest) - colmeanstrain[-1])
 
-  modelTest <- modelTest[,c(time +1, ncol(modelTest), ncol(modelTest) -1)]
-
   modelTest <- as.matrix(cbind(modelTest, dumTest))
 
   slr <- list(predM = modelTest, Testing = test1)
@@ -240,7 +242,7 @@ estimate <- function(sumobj, modelsclusttype, cluster){
 
     tobj <- modelmTest(sumobj, cluster, i - 1)
 
-    # Compute the 90% credible interval for each parameter
+    # Compute the 95% credible interval for each parameter
     lwr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.05), ncol = 1)  # lower bound
 
     upr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.95), ncol = 1)  # upper bound
