@@ -236,34 +236,29 @@ estimate <- function(sumobj, modelsclusttype, cluster){
   lowci <- matrix(nrow = 24, ncol = 0)
 
   upci <- matrix(nrow = 24, ncol = 0)
-
+  
+  meanSD <- c(NULL)
+  
   for (i in (1:48)){
     post <- rstan::extract(modelsclusttype[[cluster]][[i]])
 
     tobj <- modelmTest(sumobj, cluster, i - 1)
 
-    # Compute the 95% credible interval for each parameter
-    lwr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.05), ncol = 1)  # lower bound
-
-    upr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.95), ncol = 1)  # upper bound
-
     modelTest <- tobj$predM
 
     meanbeta <- as.matrix(colMeans(post$beta), ncol = 1)
-
-    low <- modelTest %*% lwr
-
-    up <- modelTest %*% upr
-
+    
+    meansigma <- mean(post$sigma)
+    
+    meanSD <- c(meanSD, meansigma)
+  
     est <- modelTest %*% meanbeta
 
     estimate <- cbind(estimate, est)
 
-    lowci <- cbind(lowci, low)
-    upci <- cbind(upci, up)
   }
 
-  slr <- list(colmean = colmeans, est = estimate, trueval = truevalue, upperci = upci, lowerci = lowci)
+  slr <- list(colmean = colmeans, est = estimate, trueval = truevalue, MeanSD = meanSD)
 
   class(slr) = 'estobj'
 
@@ -286,25 +281,35 @@ plotpred <- function(estobj, day){
   estimates <- estobj$est
 
   testing <- estobj$trueval
-
-  upper <- estobj$upperci
-
-  lower <- estobj$lowerci
-
+  
+  meanSD <- estobj$MeanSD
+  
   dayest <- matrix(estimates[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
+  
+  calc_ci <- function(mean_i, sd_i) {
+    se <- sd_i
+    lower <- qnorm(0.05, mean_i, se)
+    upper <- qnorm(0.95, mean_i, se)
+    return(c(lower, upper))
+  }
+  
+  ci <- mapply(calc_ci, dayest, meanSD)
 
-  lowest <- matrix(lower[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
-
-  upest <- matrix(upper[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
 
   truday <- t(testing[day,])
 
-  plotdf <- as.data.frame(cbind(1:ncol(testing), truday, dayest, lowest, upest))
+  plotdf <- as.data.frame(Time = 1:ncol(testing), True = truday, Est = dayest, 
+                          Lower = ci[1,], Upper = ci[2,])
+  
+  colnames(plotdf) <- c('Time', 'True Value', 'Estimated Value')
 
   rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
 
-  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V2)) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V3, colour = 'est')) +
-    ggplot2::geom_point(ggplot2::aes(x = V1, y = V4, colour = 'lower')) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V5, colour = 'upper'))
+  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = Time, y = True, colour = 'True Value')) + 
+    ggplot2::geom_point(ggplot2::aes(x = Time, y = Est, colour = 'Estimate')) +
+    ggplot2::geom_point(ggplot2::aes(x = Time, y = Lower, colour = 'Lower')) +
+    ggplot2::geom_point(ggplot2::aes(x = Time, y = Upper, colour = 'Upper'))
+    
 
   slr <- list(plot = plotted, RMSE = rmse, dayDF = plotdf)
 
