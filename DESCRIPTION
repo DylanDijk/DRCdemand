@@ -21,6 +21,7 @@ Imports:
     forcats,
     gower,
     lubridate,
+    magrittr,
     methods,
     Rcpp,
     RcppParallel (>= 5.0.1),
@@ -29,8 +30,6 @@ Imports:
     stats,
     tidyr
 Depends: 
-    foreach,
-    magrittr,
     R (>= 3.4.0)
 Biarch: true
 LinkingTo: 

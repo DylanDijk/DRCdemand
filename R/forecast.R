@@ -162,7 +162,7 @@ modelmTest <- function(sumobj, cluster, time){
   colmeanstrain <- dataprocess(sumobj, cluster, time)$colmean
 
   cl <- as.character(cluster)
-  
+
   sr1 <- sumtrain[sumtrain[[1]] == cl]
 
   sr2 <- sumtest[sumtest[[1]] == cl]
@@ -279,7 +279,7 @@ estimate <- function(sumobj, modelsclusttype, cluster){
 #' @export
 #'
 plotpred <- function(estobj, day){
-  V1 <- NULL
+  V1 <- V2 <- V3 <- V4 <- V5 <- NULL
 
   colmeans <- estobj$colmean
 
