@@ -298,8 +298,10 @@ plotpred <- function(estobj, day){
 
   truday <- t(testing[day,])
 
-  plotdf <- as.data.frame(Time = 1:ncol(testing), True = truday, Est = dayest, 
-                          Lower = ci[1,], Upper = ci[2,])
+  plotdf <- as.data.frame(cbind(1:ncol(testing), truday, dayest, 
+                          t(ci[1,]), t(ci[2,]))
+
+  colnames(plotdf) <- c('Time', 'True', 'Est', 'Lower', 'Upper')
 
   rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
 
