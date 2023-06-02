@@ -32,11 +32,9 @@ Irish_adj$survey <- tibble::as_tibble(Irish$survey) %>%
   dplyr::mutate(HOME.whitegoods = as.factor(Irish$survey$HOME.APPLIANCE..White.goods.)) %>% # Rename variable
   dplyr::select(-c(Code, HOME.APPLIANCE..White.goods.)) # Remove redundant variables
 
-save(Irish_adj, file = "data/Irish_adj.RData")
+save(Irish_adj, file = "data/Irish_adj.rda")
 
-
-
-# train and test split
+### Train and test split
 # random 2 days from each month
 # need to split both indCons and extra
 Irish_adj_train = Irish_adj[c("extra", "indCons")]
