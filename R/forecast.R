@@ -28,10 +28,10 @@ clustersum <- function(training, testing, clustdat, clustcol){
 
   # Data Frame with each cluster with summed electricity demand
   traindt <- data.table::data.table(merged_train)
-  sumtrain_dt <- traindt[, lapply(.SD, sum), by = 'cluster']
+  sumtrain_dt <- traindt[, lapply(data.table::.SD, sum), by = 'cluster']
 
   testdt <- data.table::data.table(merged_test)
-  sumtest_dt <- testdt[, lapply(.SD, sum), by = 'cluster']
+  sumtest_dt <- testdt[, lapply(data.table::.SD, sum), by = 'cluster']
 
   extratest$dow <- forcats::fct_collapse(extratest$dow,
                                 Weekend = c('Sun', 'Sat'),
@@ -144,9 +144,9 @@ modelmTest <- function(sumobj, cluster, time){
 
   cl <- as.integer(cluster)
 
-  sr1 <- sumtrain[sumtrain[, .I]==cl]
+  sr1 <- sumtrain[sumtrain[, data.table::.I]==cl]
 
-  sr2 <- sumtest[sumtest[, .I]==cl]
+  sr2 <- sumtest[sumtest[, data.table::.I]==cl]
 
   #Add yday on Training Data set
   train1 <- data.table::data.table(cbind(t(sr1[,-1]), extratrain$tod))
