@@ -1,0 +1,616 @@
+---
+title: "rahil_things"
+output: html_document
+date: "2023-05-27"
+---
+
+```{r}
+library(data.table)
+library(rstan)
+library(rstanarm)
+library(forcats)
+library(dplyr)
+library(bayesplot)
+library(ggplot2)
+library(parallel)
+```
+
+
+```{r}
+#' Title Summing Data based on Clustering Data set
+#'
+#' @param training Irish_Training_Data
+#' @param testing Irish_Testing_Data
+#' @param clustdat Clustering Data (with ID column in first position)
+#' @param clustcol Column of Clusters
+#'
+#' @return Training and Testing Data sets with Total Energy Consumption for Each Cluster, and split Extra Info into Training and Testing
+#' @export
+#'
+#' @examples
+clustersum <- function(training, testing, clustdat, clustcol){
+  traindf <- t(training$indCons)
+  traindf <- data.frame(ID = rownames(traindf), traindf, row.names = NULL)
+  
+  testdf <- t(testing$indCons)
+  testdf <- data.frame(ID = rownames(testdf), testdf, row.names = NULL)
+  
+  extratrain <- training$extra
+  extratest <- testing$extra
+  
+  clustdf <- as.data.frame(cbind(clustdat[,1], clustdat[,clustcol]))
+  
+  colnames(clustdf) <- c('ID', 'cluster')
+  
+  # Merge training and testing data frames with the cluster data frame
+  merged_train <- merge(traindf, clustdf , by = "ID")[,-1]
+  merged_test <- merge(testdf, clustdf, by = "ID")[,-1]
+  
+  # Data Frame with each cluster with summed electricity demand
+  traindt <- data.table(merged_train)
+  sumtrain_dt <- traindt[, lapply(.SD, sum), by = 'cluster']
+  
+  testdt <- data.table(merged_test)
+  sumtest_dt <- testdt[, lapply(.SD, sum), by = 'cluster']
+  
+  extratest$dow <- fct_collapse(extratest$dow,
+                              Weekend = c('Sun', 'Sat'),
+                              Weekday = c('Mon', 'Tue', 'Wed', 'Thu', 'Fri'))
+
+  extratrain$dow <- fct_collapse(extratrain$dow,
+                              Weekend = c('Sun', 'Sat'),
+                              Weekday = c('Mon', 'Tue', 'Wed', 'Thu', 'Fri'))
+  
+  sls <- list(sumtrain = sumtrain_dt, sumtest = sumtest_dt, extrain = extratrain, extest = extratest)
+  class(sls) = 'sumobj'
+  
+  return(sls)
+}
+```
+
+```{r}
+#' Title Predictor and Model Matrix creator
+#'
+#' @param sumobj Output of clustersum function
+#' @param cluster Cluster to Model over
+#' @param time  Time point to Model over
+#'
+#' @return Predictor, Model Matrix, and Column Means. Class 'dpobj'.
+#' @export
+#'
+#' @examples
+dataprocess <- function(sumobj, cluster, time){
+  
+  sumdata <- sumobj$sumtrain
+  
+  extra <- sumobj$extrain
+  
+  one <- data.table(cbind(t(sumdata[cluster,-1]), extra$tod))
+  
+  one <- split(one$V1, as.factor(one$V2))
+  
+  one <- as.data.table(one)[-326,]
+  
+  ex <- extra[extra$tod == as.integer(time),]
+  
+  ex <- ex[-326,]
+  
+  dum <- model.matrix(~ ex$dow - 1)[-1,]
+  
+  tX <- rbind(matrix(rep(0, ncol(one)), nrow = 1), as.matrix(one))
+  
+  yat <- (as.integer(time) +1)
+  
+  tY <- c(unlist(as.vector(one[,..yat])), 0)
+  
+  X <- cbind(tY, tX)[c(-1, -nrow(tX)),]
+
+  X <- cbind(X, ex$toy[-1], ex$temp[-1])
+  
+  means <- colMeans(X)
+
+  X <- scale(X, center = TRUE, scale = FALSE)
+  
+  X <- cbind(X, dum)
+
+  Y <- X[,1]
+
+  X <- X[,-1]
+  
+  slr <- list(modelM = X, response = Y, colmean = means)
+  
+  class(slr) <- 'dpobj'
+  return(slr)
+}
+```
+
+
+```{r}
+#' Title Fits Model using Stan
+#'
+#' @param dpobj 'dpobj' from dataprocess()
+#' @param stancode Stan code used to fit model.
+#'
+#' @return Model Fit
+#' @export
+#'
+#' @examples
+fitmodel <- function(dpobj, stancode){
+  
+  # Data for Stan
+  stan_data <- list(
+    N = length(dpobj$response),
+    K = ncol(dpobj$modelM),
+    x = dpobj$modelM,
+    y = dpobj$response
+  )
+  
+  # Compile and fit the model
+  fit <- stan(model_code = stancode, data = stan_data, iter = 2000, chains = 4)
+  
+  return(fit)
+}
+```
+
+```{r}
+#' Title Create ModelMatrix for Testing Data set
+#'
+#' @param sumobj 'sumobj' from clustersum()
+#' @param cluster cluster which the model is over
+#' @param time time point which the model is over
+#'
+#' @return Model Matrix and True Testing Values
+#' @export
+#'
+#' @examples
+modelmTest <- function(sumobj, cluster, time){
+  
+  sumtrain <- sumobj$sumtrain
+  sumtest <- sumobj$sumtest
+  extratrain <- sumobj$extrain
+  extratest <- sumobj$extest
+  
+  colmeanstrain <- dataprocess(sumobj, cluster, time)$colmean
+  
+  cl <- as.integer(cluster)
+  
+  sr1 <- sumtrain[sumtrain[, .I]==cl]
+  
+  sr2 <- sumtest[sumtest[, .I]==cl]
+  
+  #Add yday on Training Data set
+  train1 <- data.table(cbind(t(sr1[,-1]), extratrain$tod))
+  
+  train1 <- split(train1$V1, as.factor(train1$V2))
+  
+  train1 <- as.data.table(train1)
+  
+  datetrain1 <- cbind(train1, yday(extratrain$dateTime)[1:length(extratrain$dateTime) %% 48 == 1])
+  
+  test1 <- data.table(cbind(t(sr2[,-1]), extratest$tod))
+  
+  test1 <- split(test1$V1, as.factor(test1$V2))
+  
+  test1 <- as.data.table(test1)
+  
+  datetest1 <- cbind(test1, yday(extratest$dateTime)[1:length(extratest$dateTime) %% 48 == 1])
+  
+  #Create predictor matrix for testing data set
+  modelTest <- matrix(ncol = 49)
+  for (i in 1:nrow(datetest1)){
+    day <- datetest1$V2[i]
+    rw <- datetrain1[datetrain1$V2 == (day-1), ]
+    if (nrow(rw) == 0){
+      rw <- datetest1[datetest1$V2 == (day-1), ]
+    }
+    modelTest <- rbind(modelTest, rw, use.names = FALSE)
+  }
+  
+  modelTest <- modelTest[-1, -49] 
+  
+  exTest <-extratest[extratest$tod == as.integer(time),]
+  
+  dumTest <- model.matrix(~ exTest$dow - 1)
+  
+  modelTest <- cbind(modelTest, exTest$toy, exTest$temp)
+  
+  modelTest <- t(t(modelTest) - colmeanstrain[-1])
+  
+  modelTest <- as.matrix(cbind(modelTest, dumTest))
+  
+  slr <- list(predM = modelTest, Testing = test1)
+  
+  class(slr) = 'predobj'
+  
+  return(slr)
+}
+```
+
+
+```{r}
+#' Title Mean Estimated Data 
+#'
+#' @param sumobj 'sumobj' from clustersum()
+#' @param modelsclusttype list of models from certain clustering method
+#' @param cluster cluster to estimate
+#'
+#' @return Column Means, Estimate (centered), True Value. Class 'estobj'
+#' @export
+#'
+#' @examples
+estimate <- function(sumobj, modelsclusttype, cluster){
+  
+  dobj <- dataprocess(sumobj, cluster, 0)
+  
+  colmeans <- dobj$colmean
+  
+  truevalue <- modelmTest(sumobj, cluster, colmeans, 0)$Testing
+  
+  estimate <- matrix(nrow = 24, ncol = 0)
+  
+  lowci <- matrix(nrow = 24, ncol = 0)
+  
+  upci <- matrix(nrow = 24, ncol = 0)
+  
+  for (i in (1:48)){
+    post <- extract(modelsclusttype[[i + (cluster-1)*48]])
+    
+    tobj <- modelmTest(sumobj, cluster, colmeans, i - 1)
+    
+    # Compute the 95% credible interval for each parameter
+    lwr <- as.matrix(apply(post$beta, 2, quantile, probs = 0.025), ncol = 1)  # lower bound
+    
+    upr <- as.matrix(apply(post$beta, 2, quantile, probs = 0.975), ncol = 1)  # upper bound
+    
+    modelTest <- tobj$predM
+    
+    meanbeta <- as.matrix(colMeans(post$beta), ncol = 1)
+    
+    low <- modelTest %*% lwr
+    
+    up <- modelTest %*% upr
+    
+    est <- modelTest %*% meanbeta
+    
+    estimate <- cbind(estimate, est)
+    
+    lowci <- cbind(lowci, low)
+    upci <- cbind(upci, up)
+  }
+  
+  slr <- list(colmean = colmeans, est = estimate, trueval = truevalue, upperci = upci, lowerci = lowci)
+  
+  class(slr) = 'estobj'
+  
+  return(slr)}
+```
+
+```{r}
+#' Title Plot Predict
+#'
+#' @param estobj 'estobj' from estimate().
+#' @param day day to estimate.
+#'
+#' @return ggplot of estimate and true values, RMSE, and data frame with estimate for day and true value (not centered). Class 'plotobj'
+#' @export
+#'
+#' @examples
+plotpred <- function(estobj, day){
+  
+  colmeans <- estobj$colmean
+  
+  estimates <- estobj$est
+  
+  testing <- estobj$trueval
+  
+  upper <- estobj$upperci
+  
+  lower <- estobj$lowerci
+  
+  dayest <- matrix(estimates[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
+  
+  lowest <- matrix(lower[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
+  
+  upest <- matrix(upper[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
+  
+  truday <- t(testing[day,])
+  
+  plotdf <- as.data.frame(cbind(1:ncol(testing), truday, dayest, lowest, upest))
+  
+  rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
+  
+  plotted <- ggplot(plotdf) + geom_point(aes(x = V1, y = plotdf[,2])) + geom_point(aes(x = V1, y = (plotdf[,3]), col = 'est')) +
+    geom_point(aes(x = V1, y = plotdf[,4], 'lower')) + geom_point(aes(x = V1, y = (plotdf[,5]), col = 'upper'))
+  
+  slr <- list(plot = plotted, RMSE = rmse, dayDF = plotdf)
+  
+  class(slr) = 'plotobj'
+  
+  return(slr)
+}
+```
+
+
+```{r}
+#Formatting Data to Make easier to Cluster
+traindf <- t(Irish_adj_train$indCons)
+traindf <- data.frame(ID = rownames(traindf), traindf, row.names = NULL)
+
+testdf <- t(Irish_adj_test$indCons)
+testdf <- data.frame(ID = rownames(testdf), testdf, row.names = NULL)
+
+extratrain <- Irish_adj_train$extra
+extratest <- Irish_adj_test$extra
+
+# Merge training and testing data frames with the cluster data frame
+merged_train <- merge(traindf, hc4, by = "ID")[,-1]
+merged_test <- merge(testdf, hc4, by = "ID")[,-1]
+
+# Data Frame with each cluster with summed electricity demand
+traindt <- data.table(merged_train)
+sumtrain_dt <- traindt[, lapply(.SD, sum), by = cluster]
+
+testdt <- data.table(merged_test)
+sumtest_dt <- testdt[, lapply(.SD, sum), by = cluster]
+```
+
+
+```{r}
+extratest$dow <- fct_collapse(extratest$dow,
+                              Weekend = c('Sun', 'Sat'),
+                              Weekday = c('Mon', 'Tue', 'Wed', 'Thu', 'Fri'))
+
+extratrain$dow <- fct_collapse(extratrain$dow,
+                              Weekend = c('Sun', 'Sat'),
+                              Weekday = c('Mon', 'Tue', 'Wed', 'Thu', 'Fri'))
+```
+
+
+```{r}
+# Extract First Time Series
+one <- data.table(cbind(t(sumtrain_dt[1,-1]), extratrain$tod))
+
+one <- split(one$V1, as.factor(one$V2))
+
+one <- as.data.table(one)[-326,]
+
+#get extra data for TOD == 0
+ex <- extratrain[extratrain$tod == 0,]
+
+dum <- model.matrix(~ ex$dow - 1)
+
+# Combine t
+tY <- c(unlist(as.vector(one[,1])), 0)
+
+tX <- rbind(matrix(rep(0, ncol(one)), nrow = 1), as.matrix(one))
+
+X <- cbind(tY, tX)[c(-1, -nrow(tX)),]
+
+X <- cbind(X, ex$toy[-1], ex$temp[-1])
+
+X <- scale(X, center = TRUE, scale = FALSE)
+
+X <- cbind(X, dum[-1,])
+
+Y <- X[,1]
+
+X <- X[,-1]
+```
+
+```{r}
+stan_code <- "data {
+  int<lower=0> N; // number of data items
+  int<lower=0> K; // number of predictors
+  matrix[N, K] x; // predictor matrix
+  vector[N] y; // outcome vector
+}
+parameters {
+  vector[K] beta; // coefficients for predictors
+  real<lower=0> tau; // precision parameter
+}
+transformed parameters {
+  real<lower=0> sigma; // standard deviation
+  sigma = 1 / sqrt(tau); // Convert precision to standard deviation
+}
+model {
+  tau ~ gamma(2, 0.1); // Gamma prior on the precision
+  beta ~ normal(0, 100); // Normal prior on the coefficients
+  y ~ normal(x * beta, sigma); // Likelihood
+}
+
+generated quantities {
+ real y_rep[N];
+
+ for (n in 1:N) {
+ y_rep[n] = normal_rng(x[n] * beta, sigma);
+ }
+
+}"
+
+
+
+# Data for Stan
+stan_data <- list(
+    N = length(datap$response),
+    K = ncol(datap$modelM),
+    x = datap$modelM,
+    y = datap$response
+  )
+
+stan_data1 <- list(
+    N = length(Y),
+    K = ncol(X),
+    x = X,
+    y = Y
+  )
+# Compile and fit the model
+fit <- stan(model_code = stan_code, data = stan_data, iter = 2000, chains = 4)
+```
+
+```{r}
+posterior <- extract(fit)
+stan_dens(fit, pars =  (dimnames(fit)[3])$parameters[51])
+plot(posterior$beta[,5], type = 'l')
+```
+
+
+```{r}
+plot(Y)
+lines(colMeans(posterior$y_rep))
+```
+
+
+```{}
+test1 <- data.table(cbind(t(sumtest_dt[1,-1]), extratest$tod))
+  
+test1 <- split(test1$V1, as.factor(test1$V2))
+  
+test1 <- as.data.table(test1)
+```
+
+
+```{r}
+sumdo <- clustersum(Irish_adj_train, Irish_adj_test, hc4, 2)
+```
+
+```{r}
+datap <- dataprocess(sumdo, 1, 0)
+```
+
+
+```{r}
+Predobj <- modelmTest(sumdo, 1, datap$colmean, 0)
+
+modelTest0 <- Predobj$predM
+
+test <- Predobj$Testing
+
+meanbeta <- as.matrix(colMeans(posterior$beta), ncol = 1)
+
+estimate0 <-   modelTest0 %*% meanbeta
+
+plotdf <- as.data.frame(cbind(1:nrow(test), test[,1]))
+
+ggplot(plotdf) + geom_point(aes(x = V1, y = plotdf[,2])) + geom_line(aes(x = V1, y = (estimate0 + datap$colmean[1]), col = 'est'))
+```
+
+
+```{}
+options(mc.cores = 4)
+rstan_options(auto_write = TRUE)
+rstan_options(threads_per_chain = 4)
+
+clust1models <- list(NULL)
+
+for (i in 0:47){
+  dp <- dataprocess(sumdo, 1, i)
+  
+  fittemp <- fitmodel(dp, stan_code)
+  
+  clust1models[[i+1]] <- fittemp
+}
+```
+
+```{r}
+meanBetaM <- matrix(nrow = 24, ncol = 0)
+for (i in 1:48){
+  
+  post <- extract(clust1models[[i]])
+  
+  tobj <- modelmTest(sumdo, 1, datap$colmean, i - 1)
+  
+  modelTest <- tobj$predM
+  
+  meanbeta <- as.matrix(colMeans(post$beta), ncol = 1)
+  
+  est <- modelTest %*% meanbeta
+  
+  meanBetaM <- cbind(meanBetaM, est)
+}
+```
+
+```{r}
+day1 <- matrix(meanBetaM[1,], ncol = 1) + matrix(datap$colmean[-c(1,50,51)], ncol = 1)
+
+truday1 <- t(test[1,])
+
+plotdf2 <- as.data.frame(cbind(1:ncol(test), truday1, day1))
+
+ggplot(plotdf2) + geom_point(aes(x = V1, y = plotdf2[,2])) + geom_line(aes(x = V1, y = (plotdf2[,3]), col = 'est'))
+```
+
+
+
+```{r}
+plotpred(test, meanBetaM, 1, datap$colmean)
+plotpred(test, meanBetaM, 12, datap$colmean)
+plotpred(test, meanBetaM, 5, datap$colmean)
+```
+
+
+```{}
+#Fit all HC4 Clusters
+options(mc.cores = 4)
+rstan_options(auto_write = TRUE)
+rstan_options(threads_per_chain = 4)
+
+for (j in 1:4)
+  for (i in 0:47){
+    dp <- dataprocess(sumdo, j, i)
+    
+    fittemp <- fitmodel(dp, stan_code)
+    
+    hc4models[[48*(j-1) + i+1]] <- fittemp
+  }
+```
+
+
+
+```{r}
+estimateclust2 <- estimate(hc4models, 2, sumdo)
+```
+
+
+```{r}
+ar <- plotpred(estimateclust2, 24)
+ar$plot
+```
+
+```{r}
+cl <- makeCluster(4)
+
+parfit <- function(sumobj, cluster){
+  options(mc.cores = 2)
+  rstan_options(auto_write = TRUE)
+  testparr <- list(NULL)
+  for (i in 0:47){
+    dp <- dataprocess(sumobj, cluster, i)
+    
+    fittemp <- fitmodel(dp, stan_code)
+    
+    testparr[[i+1]] <- fittemp
+  }
+  return(testparr)
+}
+
+clusterEvalQ(cl, c(library(rstan), library(data.table), library(rstanarm)))
+
+clusterExport(cl, c('dataprocess','estimate','fitmodel','stan_code','sumdo', 'parfit'))
+
+clustmodeltest <- parLapply(cl,1:4, function(x){parfit(sumdo, x)})
+
+stopCluster(cl)
+```
+
+```{r}
+p <- estimate(sumdo, clustmodeltest, 4)
+```
+
+```{r}
+pl <- plotpred(p, 1)
+```
+
+```{r}
+pl$plot
+```
+

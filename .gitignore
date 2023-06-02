@@ -2,5 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-notes.md
 /data/clusters/tmp
+*.tex
