@@ -2,7 +2,7 @@
 % Please edit documentation in R/clustering.R
 \name{weekly_profile}
 \alias{weekly_profile}
-\title{Calculate the weekly profile of a household}
+\title{Calculate the average weekly profile of a household}
 \usage{
 weekly_profile(data)
 }
@@ -13,7 +13,7 @@ weekly_profile(data)
 weekly_profile A tibble containing the weekly demand profiles of each household
 }
 \description{
-Calculate the weekly profile of a household
+Calculate the average weekly profile of a household
 }
 \examples{
 valid_input <- list(
