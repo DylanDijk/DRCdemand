@@ -20,6 +20,7 @@ Imports:
     dplyr,
     forcats,
     gower,
+    lubridate,
     methods,
     Rcpp,
     RcppParallel (>= 5.0.1),
