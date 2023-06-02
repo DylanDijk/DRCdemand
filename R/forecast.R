@@ -312,3 +312,27 @@ plotpred <- function(estobj, day){
 
   return(slr)
 }
+
+#' Fit Stan Models for each time point of Cluster in Parr
+#'
+#' @param sumobj 'sumobj' from clustersum()
+#' @param stancode .stan file with stancode for our fit
+#' @param cluster which cluster to fit
+#' @param ncores number of cores for stan fit
+#' @return list of models for cluster
+#' @export
+#'
+#' @examples
+parfit <- function(sumobj, stancode, cluster, ncores){
+  options(mc.cores = ncores)
+  rstan_options(auto_write = TRUE)
+  testparr <- list(NULL)
+  for (i in 0:47){
+    dp <- dataprocess(sumobj, cluster, i)
+    
+    fittemp <- fitmodel(dp, stancode)
+    
+    testparr[[i+1]] <- fittemp
+  }
+  return(testparr)
+}
