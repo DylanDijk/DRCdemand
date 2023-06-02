@@ -288,27 +288,30 @@ plotpred <- function(estobj, day){
   
   calc_ci <- function(mean_i, sd_i) {
     se <- sd_i
-    lower <- qnorm(0.05, mean_i, se)
-    upper <- qnorm(0.95, mean_i, se)
+    lower <- qnorm(0.025, mean_i, se)
+    upper <- qnorm(0.975, mean_i, se)
     return(c(lower, upper))
   }
   
   ci <- mapply(calc_ci, dayest, meanSD)
-
-
+  
+  lowest <- matrix(ci[1,], ncol = 1)
+  
+  upest <- matrix(ci[2,], ncol = 1)
+  
   truday <- t(testing[day,])
 
   plotdf <- as.data.frame(cbind(1:ncol(testing), truday, dayest, 
-                          t(ci[1,]), t(ci[2,]))
+                          lowest, upest))
 
   colnames(plotdf) <- c('Time', 'True', 'Est', 'Lower', 'Upper')
 
   rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
 
   plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = Time, y = True, colour = 'True Value')) + 
-    ggplot2::geom_point(ggplot2::aes(x = Time, y = Est, colour = 'Estimate')) +
-    ggplot2::geom_point(ggplot2::aes(x = Time, y = Lower, colour = 'Lower')) +
-    ggplot2::geom_point(ggplot2::aes(x = Time, y = Upper, colour = 'Upper'))
+    ggplot2::geom_line(ggplot2::aes(x = Time, y = Est, colour = 'Estimate')) +
+    ggplot2::geom_line(ggplot2::aes(x = Time, y = Lower, colour = 'Lower')) +
+    ggplot2::geom_line(ggplot2::aes(x = Time, y = Upper, colour = 'Upper'))
     
 
   slr <- list(plot = plotted, RMSE = rmse, dayDF = plotdf)
