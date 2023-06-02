@@ -161,11 +161,11 @@ modelmTest <- function(sumobj, cluster, time){
 
   colmeanstrain <- dataprocess(sumobj, cluster, time)$colmean
 
-  cl <- as.integer(cluster)
+  cl <- as.character(cluster)
+  
+  sr1 <- sumtrain[sumtrain[[1]] == cl]
 
-  sr1 <- sumtrain[sumtrain[, data.table::.I]==cl]
-
-  sr2 <- sumtest[sumtest[, data.table::.I]==cl]
+  sr2 <- sumtest[sumtest[[1]] == cl]
 
   #Add yday on Training Data set
   train1 <- data.table::data.table(cbind(t(sr1[,-1]), extratrain$tod))
@@ -238,14 +238,14 @@ estimate <- function(sumobj, modelsclusttype, cluster){
   upci <- matrix(nrow = 24, ncol = 0)
 
   for (i in (1:48)){
-    post <- rstan::extract(modelsclusttype[[cluster]][[i + 1]])
+    post <- rstan::extract(modelsclusttype[[cluster]][[i]])
 
     tobj <- modelmTest(sumobj, cluster, i - 1)
 
     # Compute the 95% credible interval for each parameter
-    lwr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.025), ncol = 1)  # lower bound
+    lwr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.05), ncol = 1)  # lower bound
 
-    upr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.975), ncol = 1)  # upper bound
+    upr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.95), ncol = 1)  # upper bound
 
     modelTest <- tobj$predM
 
@@ -303,12 +303,35 @@ plotpred <- function(estobj, day){
 
   rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
 
-  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = V1, y = plotdf[,2])) + ggplot2::geom_point(ggplot2::aes(x = V1, y = (plotdf[,3]), col = 'est')) +
-    ggplot2::geom_point(ggplot2::aes(x = V1, y = plotdf[,4], 'lower')) + ggplot2::geom_point(ggplot2::aes(x = V1, y = (plotdf[,5]), col = 'upper'))
+  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V2)) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V3, colour = 'est')) +
+    ggplot2::geom_point(ggplot2::aes(x = V1, y = V4, colour = 'lower')) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V5, colour = 'upper'))
 
   slr <- list(plot = plotted, RMSE = rmse, dayDF = plotdf)
 
   class(slr) = 'plotobj'
 
   return(slr)
+}
+
+#' Fit Stan Models for each time point of Cluster in Parr
+#'
+#' @param sumobj 'sumobj' from clustersum()
+#' @param stancode .stan file with stancode for our fit
+#' @param cluster which cluster to fit
+#' @param ncores number of cores for stan fit
+#' @return list of models for cluster
+#' @export
+#'
+parfit <- function(sumobj, stancode, cluster, ncores){
+  options(mc.cores = ncores)
+  rstan::rstan_options(auto_write = TRUE)
+  testparr <- list(NULL)
+  for (i in 0:47){
+    dp <- dataprocess(sumobj, cluster, i)
+
+    fittemp <- fitmodel(dp, stancode)
+
+    testparr[[i+1]] <- fittemp
+  }
+  return(testparr)
 }
