@@ -238,7 +238,7 @@ estimate <- function(sumobj, modelsclusttype, cluster){
   upci <- matrix(nrow = 24, ncol = 0)
 
   for (i in (1:48)){
-    post <- rstan::extract(modelsclusttype[[cluster]][[i + 1]])
+    post <- rstan::extract(modelsclusttype[[cluster]][[i]])
 
     tobj <- modelmTest(sumobj, cluster, i - 1)
 
