@@ -1,9 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^data$
-^intro$
 ^analysis$
-^notes\.md$
 ^README\.Rmd$
 ^LICENSE\.md$
 ^\.github$
+^data$
