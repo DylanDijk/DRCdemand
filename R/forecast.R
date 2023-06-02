@@ -161,11 +161,11 @@ modelmTest <- function(sumobj, cluster, time){
 
   colmeanstrain <- dataprocess(sumobj, cluster, time)$colmean
 
-  cl <- as.integer(cluster)
+  cl <- as.character(cluster)
+  
+  sr1 <- sumtrain[sumtrain[[1]] == cl]
 
-  sr1 <- sumtrain[sumtrain[, data.table::.I]==cl]
-
-  sr2 <- sumtest[sumtest[, data.table::.I]==cl]
+  sr2 <- sumtest[sumtest[[1]] == cl]
 
   #Add yday on Training Data set
   train1 <- data.table::data.table(cbind(t(sr1[,-1]), extratrain$tod))
