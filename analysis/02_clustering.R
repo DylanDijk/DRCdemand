@@ -19,6 +19,7 @@ extra <- Irish_adj_train$extra
 # Calculate the weekly profile of each household (average demand at each tod at each dow)
 weekly_profile <- DRCdemand::weekly_profile(Irish_adj_train)
 
+# Create tibbles of the different data sets for clustering
 surveydem <- dplyr::left_join(survey, weekly_profile)
 dem <- dplyr::left_join(survey[,c(1,2)], weekly_profile)
 
@@ -28,16 +29,19 @@ set.seed(1)
 gd_all <- DRCdemand::gowers_distance(surveydem[,-1])
 hc_all <- stats::hclust(gd_all,
                         method = "complete")
+
 # Using only survey data, nothing on weekly profile or mean demand
 gd_fixed <- DRCdemand::gowers_distance(survey[,-c(1,2)])
 hc_fixed <- stats::hclust(gd_fixed,
                           method = "complete")
+
 # Using only demand data, weekly and mean, no survey information
 gd_dem <- DRCdemand::gowers_distance(dem[,-1])
 hc_dem <- stats::hclust(gd_dem,
                         method = "complete")
 
 # Generate individual data frames with clustering IDs and large data frame
+# Save for later use
 hcdf <- data.frame(ID = survey$ID)
 varnames <- colnames(hcdf)
 for(num_clust in 2^(0:9)){
@@ -49,11 +53,11 @@ for(num_clust in 2^(0:9)){
                     paste0("cluster",num_clust,"all"),
                     paste0("cluster",num_clust,"fixed"),
                     paste0("cluster",num_clust,"dem"))
-  hcdf_ind <- data.frame(ID = survey$ID,
-                   cluster_all = as.factor(stats::cutree(hc_all, k = num_clust)),
-                   cluster_fixed = as.factor(stats::cutree(hc_fixed, k = num_clust)),
-                   cluster_dem = as.factor(stats::cutree(hc_dem, k = num_clust)))
-  save(hcdf_ind, file = paste0("data/clusters/hclust",num_clust,".Rdata"))
+#  hcdf_ind <- data.frame(ID = survey$ID,
+#                   cluster_all = as.factor(stats::cutree(hc_all, k = num_clust)),
+#                   cluster_fixed = as.factor(stats::cutree(hc_fixed, k = num_clust)),
+#                   cluster_dem = as.factor(stats::cutree(hc_dem, k = num_clust)))
+  #save(hcdf_ind, file = paste0("data/clusters/hclust",num_clust,".Rdata"))
 }
 colnames(hcdf) <- varnames
 save(hcdf, file = "data/clusters/hclust.Rdata")
@@ -69,9 +73,9 @@ for(num_clust in 2^(0:9)){
                 as.factor(cl))
   varnames <- cbind(varnames,
                     paste0("cluster",num_clust,"all"))
-  rand_ind <- data.frame(ID = survey$ID,
-                         cluster_all = as.factor(cl))
-  save(rand_ind, file = paste0("data/clusters/random",num_clust,".Rdata"))
+#  rand_ind <- data.frame(ID = survey$ID,
+#                         cluster_all = as.factor(cl))
+#  save(rand_ind, file = paste0("data/clusters/random",num_clust,".Rdata"))
 }
 colnames(rand) <- varnames
-save(rand, file = "data/clusters/random.Rdata")
+save(rand, file = "data/clusters/rand.Rdata")
