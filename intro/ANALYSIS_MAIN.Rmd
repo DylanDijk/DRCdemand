@@ -1,0 +1,94 @@
+---
+title: "Simplified_analysis"
+output: pdf_document
+date: "2023-06-02"
+---
+
+```{r}
+remove.packages("DRCdemand")
+detach("package:DRCdemand", unload=TRUE)
+```
+
+```{r}
+devtools::install_github("DylanDijk/DRCdemand")
+```
+
+```{r}
+library(DRCdemand)
+```
+
+
+```{r}
+sumobj4all <- DRCdemand::clustersum(Irish_adj_train, Irish_adj_test, hcdf, 8)
+```
+
+```{r}
+stan_code <- "data {
+  int<lower=0> N; // number of data items
+  int<lower=0> K; // number of predictors
+  matrix[N, K] x; // predictor matrix
+  vector[N] y; // outcome vector
+}
+parameters {
+  vector[K] beta; // coefficients for predictors
+  real<lower=0> tau; // precision parameter
+}
+transformed parameters {
+  real<lower=0> sigma; // standard deviation
+  sigma = 1 / sqrt(tau); // Convert precision to standard deviation
+}
+model {
+  tau ~ gamma(2, 0.1); // Gamma prior on the precision
+  beta ~ normal(0, 100); // Normal prior on the coefficients
+  y ~ normal(x * beta, sigma); // Likelihood
+}
+
+generated quantities {
+ real y_rep[N];
+
+ for (n in 1:N) {
+ y_rep[n] = normal_rng(x[n] * beta, sigma);
+ }
+
+}"
+```
+
+
+```{r}
+library(parallel)
+
+cl <- makeCluster(4)
+
+#' Fit Stan Models for each time point of Cluster in Parr
+#'
+#' @param sumobj 'sumobj' from clustersum()
+#' @param stancode .stan file with stancode for our fit
+#' @param cluster which cluster to fit
+#' @param ncores number of cores for stan fit
+#' @return list of models for cluster
+#' @export
+#'
+#' @examples
+parfit <- function(sumobj, stancode, cluster, ncores){
+  options(mc.cores = ncores)
+  rstan_options(auto_write = TRUE)
+  testparr <- list(NULL)
+  for (i in 0:47){
+    dp <- dataprocess(sumobj, cluster, i)
+    
+    fittemp <- fitmodel(dp, stancode)
+    
+    testparr[[i+1]] <- fittemp
+  }
+  return(testparr)
+}
+
+clusterEvalQ(cl, c(library(rstan), library(data.table), library(rstanarm), library(DRCdemand)))
+
+clusterExport(cl, c('dataprocess','estimate','fitmodel','sumobj4all','stan_code', 'parfit'))
+
+hc4allmodels <- parLapply(cl,1:4, function(x){parfit(sumobj4all, stan_code, x, 2)})
+
+stopCluster(cl)
+```
+
