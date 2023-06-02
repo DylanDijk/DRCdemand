@@ -34,6 +34,7 @@ gowers_distance <- function(data){
 #' indCons = data.frame(I1002 = c(1, 10, 20, 30), I1003 = c(40, 50, 60, 70)))
 #' weekly_profile(valid_input)
 weekly_profile <- function(data){
+  ID <- avg_demand <- demand <- dow <- tod <- todow <- yday <- NULL
   # Check if the input is a list
   if (!is.list(data)) {
     stop("Input is not a list.")
@@ -57,7 +58,7 @@ weekly_profile <- function(data){
   extra <- data$extra
   weekly_profile <- indCons %>%
     cbind(tod = extra$tod, dow = extra$dow) %>%
-    tidyr::pivot_longer(cols = starts_with("I"),
+    tidyr::pivot_longer(cols = dplyr::starts_with("I"),
                  names_to = "ID",
                  values_to = "demand") %>%
     dplyr::group_by(tod, dow, ID) %>%

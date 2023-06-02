@@ -155,7 +155,7 @@ modelmTest <- function(sumobj, cluster, time){
 
   train1 <- data.table::as.data.table(train1)
 
-  datetrain1 <- cbind(train1, yday(extratrain$dateTime)[1:length(extratrain$dateTime) %% 48 == 1])
+  datetrain1 <- cbind(train1, lubridate::yday(extratrain$dateTime)[1:length(extratrain$dateTime) %% 48 == 1])
 
   test1 <- data.table::data.table(cbind(t(sr2[,-1]), extratest$tod))
 
@@ -219,7 +219,7 @@ estimate <- function(sumobj, modelsclusttype, cluster){
   upci <- matrix(nrow = 24, ncol = 0)
 
   for (i in (1:48)){
-    post <- extract(modelsclusttype[[cluster]][[i + 1]])
+    post <- rstan::extract(modelsclusttype[[cluster]][[i + 1]])
 
     tobj <- modelmTest(sumobj, cluster, i - 1)
 
@@ -260,6 +260,7 @@ estimate <- function(sumobj, modelsclusttype, cluster){
 #' @export
 #'
 plotpred <- function(estobj, day){
+  V1 <- NULL
 
   colmeans <- estobj$colmean
 
@@ -283,7 +284,7 @@ plotpred <- function(estobj, day){
 
   rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
 
-  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(aes(x = V1, y = plotdf[,2])) + ggplot2::geom_point(ggplot2::aes(x = V1, y = (plotdf[,3]), col = 'est')) +
+  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = V1, y = plotdf[,2])) + ggplot2::geom_point(ggplot2::aes(x = V1, y = (plotdf[,3]), col = 'est')) +
     ggplot2::geom_point(ggplot2::aes(x = V1, y = plotdf[,4], 'lower')) + ggplot2::geom_point(ggplot2::aes(x = V1, y = (plotdf[,5]), col = 'upper'))
 
   slr <- list(plot = plotted, RMSE = rmse, dayDF = plotdf)
