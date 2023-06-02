@@ -9,6 +9,25 @@
 #' @export
 #'
 clustersum <- function(training, testing, clustdat, clustcol){
+  # Check if the input is a list
+  if (!is.list(training) | !is.list(testing)) {
+    stop("Input is not a list.")
+  }
+
+  # Check if the input list has at least length two
+  if (length(training) < 2 | length(testing) < 2) {
+    stop("Input list does not have at least length two.")
+  }
+
+  # Check if the 'extra' data frame exists in the input list
+  if ((!("extra" %in% names(training)) || !is.data.frame(training$extra)) | (!("extra" %in% names(testing)) || !is.data.frame(testing$extra))) {
+    stop("Input list does not contain the 'extra' data frame.")
+  }
+
+  # Check if the 'indCons' data frame exists in the input list
+  if ((!("indCons" %in% names(training)) || !is.data.frame(training$indCons)) | (!("indCons" %in% names(testing)) || !is.data.frame(testing$indCons))) {
+    stop("Input list does not contain the 'indCons' data frame.")
+  }
   traindf <- t(training$indCons)
   traindf <- data.frame(ID = rownames(traindf), traindf, row.names = NULL)
 

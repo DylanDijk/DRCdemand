@@ -21,7 +21,7 @@ gowers_distance <- function(data){
   return(gowers_dist)
 }
 
-#' Calculate the weekly profile of a household
+#' Calculate the average weekly profile of a household
 #'
 #' @param data A list of data.frames in the same format as those in Irish.RData. Does not need to contain survey data.
 #'
