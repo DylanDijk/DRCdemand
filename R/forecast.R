@@ -243,9 +243,9 @@ estimate <- function(sumobj, modelsclusttype, cluster){
     tobj <- modelmTest(sumobj, cluster, i - 1)
 
     # Compute the 95% credible interval for each parameter
-    lwr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.025), ncol = 1)  # lower bound
+    lwr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.05), ncol = 1)  # lower bound
 
-    upr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.975), ncol = 1)  # upper bound
+    upr <- as.matrix(apply(post$beta, 2, stats::quantile, probs = 0.95), ncol = 1)  # upper bound
 
     modelTest <- tobj$predM
 
@@ -303,8 +303,8 @@ plotpred <- function(estobj, day){
 
   rmse <- sqrt(sum((plotdf[,2] - plotdf[,3])^2)/length(plotdf[,3]))
 
-  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = V1, y = plotdf[,2])) + ggplot2::geom_point(ggplot2::aes(x = V1, y = (plotdf[,3]), col = 'est')) +
-    ggplot2::geom_point(ggplot2::aes(x = V1, y = plotdf[,4], 'lower')) + ggplot2::geom_point(ggplot2::aes(x = V1, y = (plotdf[,5]), col = 'upper'))
+  plotted <- ggplot2::ggplot(plotdf) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V2)) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V3, colour = 'est')) +
+    ggplot2::geom_point(ggplot2::aes(x = V1, y = V4, colour = 'lower')) + ggplot2::geom_point(ggplot2::aes(x = V1, y = V5, colour = 'upper'))
 
   slr <- list(plot = plotted, RMSE = rmse, dayDF = plotdf)
 
