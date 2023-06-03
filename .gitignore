@@ -2,6 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+/data/clusters/tmp
+*.tex
 notes.md
 intro/trying_ridge.R
 

@@ -1,0 +1,44 @@
+Package: DRCdemand
+Title: Forecasting of Irish Electricity Data
+Version: 0.1.0
+Authors@R: c(
+    person("Dylan", "Dijk", email = "zl22291@bristol.ac.uk", role = "aut"),
+    person("Rahil", "Morjaria", email = "kl18909@bristol.ac.uk", role = "aut"),
+    person("Codie", "Wood", email = "codie.wood@bristol.ac.uk", role = c("aut","cre")))
+Description: Provides functions to aid analysis of the Irish electricity demand data set, including functions for clustering and forecasting.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Suggests: 
+    ggplot2,
+    testthat (>= 3.0.0),
+    tibble
+Config/testthat/edition: 3
+Imports: 
+    data.table,
+    dplyr,
+    forcats,
+    gower,
+    lubridate,
+    methods,
+    Rcpp,
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    rstantools (>= 2.3.1),
+    stats,
+    tidyr
+Depends: 
+    foreach,
+    magrittr,
+    R (>= 3.4.0)
+Biarch: true
+LinkingTo: 
+    BH (>= 1.66.0),
+    Rcpp,
+    RcppEigen (>= 0.3.3.3.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
+SystemRequirements: GNU make
+LazyData: true

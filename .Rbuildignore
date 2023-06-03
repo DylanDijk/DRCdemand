@@ -1,0 +1,8 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^analysis$
+^README\.Rmd$
+^LICENSE\.md$
+^\.github$
+^data$
+^inst$
