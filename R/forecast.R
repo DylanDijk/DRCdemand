@@ -343,3 +343,39 @@ parfit <- function(sumobj, stancode, cluster, ncores){
   }
   return(testparr)
 }
+
+#' Generate DF of total demand, estimates and CI for Clustering Type for certain day
+#'
+#' @param estobj object from estimate()
+#' @param no.clust number of clusters in estobj
+#' @param day day to get total demand, estimates and CI for.
+#'
+#' @return DF, and RMSE
+totaldem <- function(estobj, no.clust, day){
+  daydfs <- list(NULL)
+  
+  for (i in 1:4){
+    p <- DRCdemand::plotpred(estobj[[i]], day)
+    daydfs[[i]] <- p$dayDF[,-1]
+  }
+  
+  true <- as.matrix(rep(0,48), ncol = 1)
+  est <- as.matrix(rep(0,48), ncol = 1)
+  low <- as.matrix(rep(0,48), ncol = 1)
+  up <- as.matrix(rep(0,48), ncol = 1)
+  
+  for (i in 1:4){
+    df <- daydfs[[i]]
+    true <- true + as.matrix(df[,1], ncol = 1)
+    est <- est + as.matrix(df[,2], ncol = 1)
+    low <- low + as.matrix(df[,3], ncol = 1)
+    up <- up + as.matrix(df[,4], ncol = 1)
+  }
+  final <- as.data.frame(cbind(0:47, true, est, low, up))
+  colnames(final) <- c('Time','True Value', 'Estimate', 'Lower', 'Upper')
+  
+  RMSE <- sqrt(sum((final[,'True Value'] - final[, 'Estimate']))^2/48)
+  
+  slr <- list(df = final, rmse = RMSE)
+  return(slr)
+}
