@@ -354,7 +354,7 @@ parfit <- function(sumobj, stancode, cluster, ncores){
 totaldem <- function(estobj, no.clust, day){
   daydfs <- list(NULL)
   
-  for (i in 1:day){
+  for (i in 1:no.clust){
     p <- DRCdemand::plotpred(estobj[[i]], day)
     daydfs[[i]] <- p$dayDF[,-1]
   }
@@ -364,7 +364,7 @@ totaldem <- function(estobj, no.clust, day){
   low <- as.matrix(rep(0,48), ncol = 1)
   up <- as.matrix(rep(0,48), ncol = 1)
   
-  for (i in 1:4){
+  for (i in 1:no.clust){
     df <- daydfs[[i]]
     true <- true + as.matrix(df[,1], ncol = 1)
     est <- est + as.matrix(df[,2], ncol = 1)
