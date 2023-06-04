@@ -361,6 +361,7 @@ parfit <- function(sumobj, stancode, cluster, ncores){
 #' @param day day to get total demand, estimates and CI for.
 #'
 #' @return DF, and RMSE
+#' @export
 totaldem <- function(estobj, no.clust, day){
   daydfs <- list(NULL)
 
