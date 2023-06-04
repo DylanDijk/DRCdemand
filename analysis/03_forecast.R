@@ -50,7 +50,6 @@ for (i in loop){
   rm(Models)
 }
 
-
 # Fitting for random clustering following same format as previous
 
 cl <- makeCluster(4)
@@ -65,6 +64,7 @@ rand8 <- parLapply(cl, 1:8, function(x){DRCdemand::parfit(randsumobj8, stan_code
 save(rand8, file = 'C:/Users/Admin/Documents/models/rand8.RData')
 
 stopCluster(cl)
+
 
 #Creating Model Matrices for each Cluster and Training Data points.
 
