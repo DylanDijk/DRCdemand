@@ -11,6 +11,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Suggests: 
+    dendextend,
     ggplot2,
     testthat (>= 3.0.0),
     tibble
@@ -21,6 +22,7 @@ Imports:
     forcats,
     gower,
     lubridate,
+    magrittr,
     methods,
     Rcpp,
     RcppParallel (>= 5.0.1),
@@ -29,8 +31,6 @@ Imports:
     stats,
     tidyr
 Depends: 
-    foreach,
-    magrittr,
     R (>= 3.4.0)
 Biarch: true
 LinkingTo: 

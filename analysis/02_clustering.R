@@ -1,9 +1,5 @@
-library(tidyverse)
-library(DRCdemand)
-
-# Load processed data
-load("data/Irish_adj_train.RData")
-load("data/Irish_adj.RData")
+# Load data, packages and plot settings from previous analysis script
+source("analysis/01_introduction.R")
 
 survey <- Irish_adj$survey
 indCons_train <- Irish_adj_train$indCons
@@ -25,23 +21,51 @@ dem <- dplyr::left_join(survey[,c(1,2)], weekly_profile)
 
 ### Hierarchical clustering using complete linkage
 set.seed(1)
-# Using all data, survey and weekly and mean
+library(dendextend) # For plotting
+
+# Calculate distance using all data, survey and weekly and mean
 gd_all <- DRCdemand::gowers_distance(surveydem[,-1])
+# Distance plot (not included)
+# factoextra::fviz_dist(gd_all, gradient = list(low = cbpal[1], mid = "white", high = cbpal[2]))
+
 hc_all <- stats::hclust(gd_all,
                         method = "complete")
+dhc_all <- as.dendrogram(hc_all)
+
+# Plot clustering results
+DRCdemand::plot_clusters(dhc_all, 4, cbpal)
+DRCdemand::plot_clusters(dhc_all, 8, cbpal)
 
 # Using only survey data, nothing on weekly profile or mean demand
 gd_fixed <- DRCdemand::gowers_distance(survey[,-c(1,2)])
+
+# Distance plot (not included)
+# factoextra::fviz_dist(gd_fixed, gradient = list(low = cbpal[1], mid = "white", high = cbpal[2]))
+
 hc_fixed <- stats::hclust(gd_fixed,
                           method = "complete")
+dhc_fixed <- as.dendrogram(hc_fixed)
+
+# Plot clusterings
+DRCdemand::plot_clusters(dhc_fixed, 4, cbpal)
+DRCdemand::plot_clusters(dhc_fixed, 8, cbpal)
 
 # Using only demand data, weekly and mean, no survey information
 gd_dem <- DRCdemand::gowers_distance(dem[,-1])
+
+# Distance plot (not included)
+# factoextra::fviz_dist(gd_all, gradient = list(low = cbpal[1], mid = "white", high = cbpal[2]))
+
 hc_dem <- stats::hclust(gd_dem,
                         method = "complete")
+dhc_dem <- as.dendrogram(hc_dem)
+
+# Plot clusterings
+DRCdemand::plot_clusters(dhc_dem, 4, cbpal)
+DRCdemand::plot_clusters(dhc_dem, 8, cbpal)
 
 # Generate individual data frames with clustering IDs and large data frame
-# Save for later use
+# Save for later ease of use
 hcdf <- data.frame(ID = survey$ID)
 varnames <- colnames(hcdf)
 for(num_clust in 2^(0:9)){

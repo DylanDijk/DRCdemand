@@ -274,7 +274,7 @@ estimate <- function(sumobj, modelsclusttype, cluster){
 #' @export
 #'
 plotpred <- function(estobj, day){
-  Est <- Lower <- Upper <- True <- Time <- V1 <- NULL
+  Est <- Lower <- Upper <- True <- Time <- NULL
 
   colmeans <- estobj$colmean
 

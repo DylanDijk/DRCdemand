@@ -69,3 +69,24 @@ weekly_profile <- function(data){
     tidyr::pivot_wider(names_from = todow, values_from = avg_demand)
   return(weekly_profile)
 }
+
+#' Plots the dendrogram from HAC
+#'
+#' @param dendrogram A 'dendrogram' object as produced by as.dendrogram
+#' @param num_clus The number of clusters to be shown
+#' @param pal Colour palette used, usually a vector of string hex codes
+#'
+#' @return A plot of the dendrogram with the specified number of clusters
+#' @export
+#'
+#' @examples
+#' hc <- hclust(dist(iris[, 1:4]))
+#' dend <- as.dendrogram(hc)
+#' pal <- c("#8DA0CB", "#E78AC3", "#66C2A5")
+#' plot_clusters(dend, 3, pal)
+plot_clusters <- function(dendrogram, num_clus, pal){
+  dend <- dendrogram %>%
+    dendextend::color_branches(k = num_clus, col = pal) %>%
+    dendextend::set("branches_lwd", rep(2,num_clus))
+  pl <- plot(dend, leaflab = "none")
+}
