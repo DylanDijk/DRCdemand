@@ -30,8 +30,6 @@ dissimilarity matrix:
 
 ``` r
 library(DRCdemand)
-#> Loading required package: foreach
-#> Loading required package: magrittr
 data <- data.frame(
   V1 = c(1, 2, 3),
   V2 = c(4, 5, 6),
@@ -43,3 +41,15 @@ gowers_distance(data)
 #> 2 0.375      
 #> 3 1.000 0.625
 ```
+
+We can also use our package to plot results from hierarchical
+clustering, demonstrated here using the R `iris` data:
+
+``` r
+hc <- hclust(dist(iris[, 1:4]))
+dend <- as.dendrogram(hc)
+pal <- c("#8DA0CB", "#E78AC3", "#66C2A5")
+DRCdemand::plot_clusters(dend, 3, pal)
+```
+
+<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
