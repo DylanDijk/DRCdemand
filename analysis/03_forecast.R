@@ -17,6 +17,8 @@ sumobj8 <-list(
   fixed = DRCdemand::clustersum(Irish_adj_train, Irish_adj_test, hcdf, index + 1),
   dem = DRCdemand::clustersum(Irish_adj_train, Irish_adj_test, hcdf, index + 2))
 
+stan_code <- stanmodels$brr@model_code
+
 loop <- list('all', 'fixed', 'dem')
 for (i in loop){
 
