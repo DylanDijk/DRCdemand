@@ -21,7 +21,7 @@ test_that("Gower's distance function calculates the distance matrix correctly", 
 
   # Check if the output matches the expected output
   expect_identical(attr(output, "method"), attr(expected_output, "method"))
-  expect_equivalent(output, expected_output)
+  expect_equal(output, expected_output, ignore_attr = T)
 })
 
 # Unit test for weekly profiling

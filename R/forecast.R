@@ -263,7 +263,24 @@ estimate <- function(sumobj, modelsclusttype, cluster){
   class(slr) = 'estobj'
 
   return(slr)
-  }
+}
+
+#' Create CI for plotting
+#'
+#' @param mean_i The mean
+#' @param sd_i The standard deviation, already scaled for sample size
+#'
+#' @return A vector containing the 95% CI
+#' @export
+#'
+#' @examples
+#' calc_ci(0, 1)
+calc_ci <- function(mean_i, sd_i) {
+  se <- sd_i
+  lower <- stats::qnorm(0.025, mean_i, se)
+  upper <- stats::qnorm(0.975, mean_i, se)
+  return(c(lower, upper))
+}
 
 #' Plot Predict
 #'
@@ -286,14 +303,7 @@ plotpred <- function(estobj, day){
 
   dayest <- matrix(estimates[day,], ncol = 1) + matrix(colmeans[-c(1,50,51)], ncol = 1)
 
-  calc_ci <- function(mean_i, sd_i) {
-    se <- sd_i
-    lower <- stats::qnorm(0.025, mean_i, se)
-    upper <- stats::qnorm(0.975, mean_i, se)
-    return(c(lower, upper))
-  }
-
-  ci <- mapply(calc_ci, dayest, meanSD)
+  ci <- mapply(DRCdemand::calc_ci, dayest, meanSD)
 
   lowest <- matrix(ci[1,], ncol = 1)
 
@@ -353,17 +363,17 @@ parfit <- function(sumobj, stancode, cluster, ncores){
 #' @return DF, and RMSE
 totaldem <- function(estobj, no.clust, day){
   daydfs <- list(NULL)
-  
+
   for (i in 1:no.clust){
     p <- DRCdemand::plotpred(estobj[[i]], day)
     daydfs[[i]] <- p$dayDF[,-1]
   }
-  
+
   true <- as.matrix(rep(0,48), ncol = 1)
   est <- as.matrix(rep(0,48), ncol = 1)
   low <- as.matrix(rep(0,48), ncol = 1)
   up <- as.matrix(rep(0,48), ncol = 1)
-  
+
   for (i in 1:no.clust){
     df <- daydfs[[i]]
     true <- true + as.matrix(df[,1], ncol = 1)
@@ -373,9 +383,9 @@ totaldem <- function(estobj, no.clust, day){
   }
   final <- as.data.frame(cbind(0:47, true, est, low, up))
   colnames(final) <- c('Time','True Value', 'Estimate', 'Lower', 'Upper')
-  
+
   RMSE <- sqrt(sum((final[,'True Value'] - final[, 'Estimate']))^2/48)
-  
+
   slr <- list(df = final, rmse = RMSE)
   return(slr)
 }
