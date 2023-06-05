@@ -19,6 +19,8 @@ sumobj8 <-list(
 
 stan_code <- stanmodels$brr@model_code
 
+# Generate models
+
 loop <- list('all', 'fixed', 'dem')
 for (i in loop){
 
@@ -41,7 +43,7 @@ for (i in loop){
   assign(varname, Models)
 
   loc = paste('C:/Users/Admin/Documents/models/', varname, '.RData', sep = '')
-
+  # Save for later use
   save(list = varname, file = loc)
 
   stopCluster(cl)

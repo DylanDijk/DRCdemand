@@ -4,10 +4,10 @@
 \alias{totaldem}
 \title{Generate DF of total demand, estimates and CI for Clustering Type for certain day}
 \usage{
-totaldem(estobj, no.clust, day)
+totaldem(lestobj, no.clust, day)
 }
 \arguments{
-\item{estobj}{object from estimate()}
+\item{lestobj}{list of estobj object - each index being from estimate()}
 
 \item{no.clust}{number of clusters in estobj}
 

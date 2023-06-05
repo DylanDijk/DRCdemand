@@ -356,7 +356,7 @@ parfit <- function(sumobj, stancode, cluster, ncores){
 
 #' Generate DF of total demand, estimates and CI for Clustering Type for certain day
 #'
-#' @param list of estobj object - each index being from estimate()
+#' @param lestobj list of estobj object - each index being from estimate()
 #' @param no.clust number of clusters in estobj
 #' @param day day to get total demand, estimates and CI for.
 #'
