@@ -85,6 +85,15 @@ ggplot(rand8df) + geom_point(aes(x = Time, y = rand8df[,2], colour = 'True')) + 
   labs(title = 'Total Demand Estimate for rand8 Clustering for Testing Day 1', y = 'Total Demand', x = 'Time Point')+
   scale_color_manual(values = cbpal)
 
+ggplot(all8cl1betas) + geom_line(aes(x = 0:47, y = TimeOfYear, colour = 'Time of Year')) +
+  labs(title = 'Coefficients for Variable TimeOfYear for all8 Models 0-47. Cluster 1.', x = 'Model', y = 'Beta')+
+  scale_color_manual(values = cbpal)
+
+ggplot(all8cl1betas) + geom_line(aes(x = 0:47, y = Weekday, color = 'Weekday')) +
+  geom_line(aes(x = 0:47, y = Weekend, color = 'Weekend')) +
+  labs(title = 'Coefficients for Variable Weekday and Weekend for all8 Models 0-47. Cluster 1.', x = 'Model', y = 'Beta')+
+  scale_color_manual(values = cbpal)
+
 # RMSE Investigations
 
 load("data/estobjs/all4est.RData")
