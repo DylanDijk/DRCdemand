@@ -1,0 +1,170 @@
+---
+title: "Further plots"
+output:
+  html_document:
+    keep_md: yes
+  pdf_document: default
+date: "2023-06-02"
+---
+
+
+```{r}
+library(DRCdemand)
+library(ggplot2)
+load("~/models/all8cl1betas.RData")
+load("C:/Users/Admin/DRC-Group-Project/data/estobjs/all8est.RData")
+load("C:/Users/Admin/DRC-Group-Project/data/estobjs/all4est.RData")
+load("C:/Users/Admin/DRC-Group-Project/data/estobjs/fixed8est.RData")
+load("C:/Users/Admin/DRC-Group-Project/data/estobjs/fixed4est.RData")
+```
+
+
+
+```{r}
+ggplot2::theme_set(theme_bw())
+cbpal <- RColorBrewer::brewer.pal(8, "Set2")[c(3,4,1,2,5,6,7,8)]
+
+
+all8_day1 <- totaldem(all8est, 8, 1)
+```
+
+
+```{r all8day1, dev = 'pdf'}
+all8df <- all8_day1$df
+
+
+ggplot(all8df) + geom_point(aes(x = Time, y = all8df[,2], colour = 'True')) + geom_line(aes(x = Time, y = Estimate, colour = 'Estimate')) +
+  geom_line(aes(x = Time, y = Lower, colour = '95% CI')) + geom_line(aes(x = Time, y = Upper, colour = '95% CI')) +
+  labs(title = 'Total Demand Estimate for all8 Clustering for Testing Day 1', y = 'Total Demand', x = 'Time Point') +
+  scale_color_manual(values = cbpal)
+```
+
+```{r all4day1, dev = 'pdf'}
+all4_day1 <- totaldem(all4est, 4, 1)
+all4df <- all4_day1$df
+ggplot(all4df) + geom_point(aes(x = Time, y = all4df[,2], colour = 'True')) + geom_line(aes(x = Time, y = Estimate, colour = 'Estimate')) +
+  geom_line(aes(x = Time, y = Lower, colour = '95% CI')) + geom_line(aes(x = Time, y = Upper, colour = '95% CI')) +
+  labs(title = 'Total Demand Estimate for all4 Clustering for Testing Day 1', y = 'Total Demand', x = 'Time Point') +
+  scale_color_manual(values = cbpal)
+```
+
+```{r fix4day1, dev = 'pdf'}
+fix4_day1 <- totaldem(fixed4est, 4, 1)
+fix4df <- fix4_day1$df
+ggplot(fix4df) + geom_point(aes(x = Time, y = fix4df[,2], colour = 'True')) + geom_line(aes(x = Time, y = Estimate, colour = 'Estimate')) +
+  geom_line(aes(x = Time, y = Lower, colour = '95% CI')) + geom_line(aes(x = Time, y = Upper, colour = '95% CI')) +
+  labs(title = 'Total Demand Estimate for fixed4 Clustering for Testing Day 1', y = 'Total Demand', x = 'Time Point') +
+  scale_color_manual(values = cbpal)
+```
+
+```{r fix8day1, dev = 'pdf'}
+fix8_day1 <- totaldem(fixed8est, 4, 1)
+fix8df <- fix8_day1$df
+ggplot(fix8df) + geom_point(aes(x = Time, y = fix8df[,2], colour = 'True')) + geom_line(aes(x = Time, y = Estimate, colour = 'Estimate')) +
+  geom_line(aes(x = Time, y = Lower, colour = '95% CI')) + geom_line(aes(x = Time, y = Upper, colour = '95% CI')) +
+  labs(title = 'Total Demand Estimate for fixed8 Clustering for Testing Day 1', y = 'Total Demand', x = 'Time Point')+
+  scale_color_manual(values = cbpal)
+```
+
+
+
+```{r all8cl1day1, dev = 'pdf'}
+plotpred(all8est[[1]],1)$plot + labs(title = 'all8 Cluster 1, Day 1', y = 'Total Demand of Cluster 1', x = 'Time Point') +
+  scale_color_manual(values = cbpal)
+```
+```{r all8cl8day1, dev = 'pdf'}
+plotpred(all8est[[8]],1)$plot + labs(title = 'all8 Cluster 8, Day 1', y = 'Total Demand of Cluster 8', x = 'Time Point')+
+  scale_color_manual(values = cbpal)
+```
+
+```{r}
+library(rstan)
+#posterior <- extract(all8[[1]][[1]])
+```
+
+```{r convplots, dev = 'pdf'}
+ggplot() + geom_line(aes(x = 1:4000, y = posterior$beta[,1])) + 
+  labs(title = 'Convergence of Time Point 0 on Cluster 1, Time Point 0 Model: All8 Clustering', x = 'Iteration', y = 'Beta[1]')+
+  scale_color_manual(values = cbpal)
+
+ggplot() + geom_line(aes(x = 1:4000, y = posterior$beta[,49])) + 
+  labs(title = 'Convergence of TimeOfYear on Cluster 1, Time Point 0 Model: All8 Clustering', x = 'Iteration', y = 'Beta[49]')+
+  scale_color_manual(values = cbpal)
+
+ggplot() + geom_line(aes(x = 1:4000, y = posterior$beta[,51])) + 
+  labs(title = 'Convergence of Time Point Weekday on Cluster 1, Time Point 0 Model: All8 Clustering', x = 'Iteration', y = 'Beta[51]')+
+  scale_color_manual(values = cbpal)
+```
+```{}
+posterior <- extract(all8[[1]][[1]])
+all8cl1betas <- data.frame(t(colMeans(posterior$beta)))
+
+colnames(all8cl1betas) <- c(paste('beta', 0:47, sep = ''), 'TimeOfYear', 'Temp', 'Weekday', 'Weekend')
+for (i in 2:48){
+  posterior <- extract(all8[[1]][[i]])
+  betas <- colMeans(posterior$beta)
+  all8cl1betas <- rbind(all8cl1betas, colMeans(posterior$beta))
+}
+```
+
+```{r modelbetaeffects0-2, dev = 'pdf'}
+ggplot(all8cl1betas) + geom_line(aes(x = 0:47, y = beta0, colour = '0')) + 
+  geom_line(aes(x = 0:47, y = beta1, colour = '1')) +
+  geom_line(aes(x = 0:47, y = beta2, colour = '2')) +
+  scale_color_manual(values = cbpal) + 
+  labs(title = 'Coefficients for Prev. Day Time Points for Time 0-47 Models. Cluster 1.', x = 'Model', y = 'Beta')
+  
+  
+```
+
+```{r modelbetaeffects12-14, dev = 'pdf'}
+ggplot(all8cl1betas)+
+  geom_line(aes(x = 0:47, y = beta12, colour = '12')) +
+  geom_line(aes(x = 0:47, y = beta13, colour = '13')) +
+  geom_line(aes(x = 0:47, y = beta14, colour = '14')) +
+  scale_color_manual(values = cbpal) + 
+  labs(title = 'Coefficients for Prev. Day Time Points for Time 0-47 Models. Cluster 1.', x = 'Model', y = 'Beta')
+```
+
+
+```{r time0, dev= 'pdf'}
+ggplot() + geom_line(aes(x = 0:47, y = t(all8cl1betas[1, 1:48]))) + 
+  labs(title = 'Coefficients for Prev. Day Time Points for Time 0 Model. Cluster 1.', x = 'Time', y = 'Beta')+
+  scale_color_manual(values = cbpal)
+```
+
+```{r time47, dev = 'pdf'}
+ggplot() + geom_line(aes(x = 0:47, y = t(all8cl1betas[48, 1:48]))) + 
+  labs(title = 'Coefficients for Prev. Day Time Points for Time 47 Model. Cluster 1.', x = 'Time', y = 'Beta')+
+  scale_color_manual(values = cbpal)
+```
+
+```{r time24, dev = 'pdf'}
+ggplot() + geom_line(aes(x = 0:47, y = t(all8cl1betas[24, 1:48]))) + 
+  labs(title = 'Coefficients for Prev. Day Time Points for Time 24 Model. Cluster 1.', x = 'Time', y = 'Beta')+
+  scale_color_manual(values = cbpal)
+```
+
+
+```{r TimeOfYear, dev = 'pdf'}
+ggplot(all8cl1betas) + geom_line(aes(x = 0:47, y = TimeOfYear)) +
+   labs(title = 'Coefficients for Variable TimeOfYear for Models 0-47. Cluster 1.', x = 'Model', y = 'Beta')+
+  scale_color_manual(values = cbpal)
+```
+
+```{r wkdaywkend, dev = 'pdf'}
+ggplot(all8cl1betas) + geom_line(aes(x = 0:47, y = Weekday, color = 'Weekday')) +
+   geom_line(aes(x = 0:47, y = Weekend, color = 'Weekend')) +
+   labs(title = 'Coefficients for Variable Weekday and Weekend for Models 0-47. Cluster 1.', x = 'Model', y = 'Beta')+
+  scale_color_manual(values = cbpal)
+```
+
+```{r corrplot, dev = 'pdf'}
+library(ggcorrplot)
+corr <- all8cl1betas[,1:48]
+colnames(corr) <- 1:48
+ggcorrplot(corr)+
+  ggplot2::labs(title = 'Corr Plot for Effect of Beta on Models. Cluster 1.')
+```
+```
+
