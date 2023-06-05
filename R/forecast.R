@@ -356,17 +356,17 @@ parfit <- function(sumobj, stancode, cluster, ncores){
 
 #' Generate DF of total demand, estimates and CI for Clustering Type for certain day
 #'
-#' @param estobj object from estimate()
+#' @param list of estobj object - each index being from estimate()
 #' @param no.clust number of clusters in estobj
 #' @param day day to get total demand, estimates and CI for.
 #'
 #' @return DF, and RMSE
 #' @export
-totaldem <- function(estobj, no.clust, day){
+totaldem <- function(lestobj, no.clust, day){
   daydfs <- list(NULL)
 
   for (i in 1:no.clust){
-    p <- DRCdemand::plotpred(estobj[[i]], day)
+    p <- DRCdemand::plotpred(lestobj[[i]], day)
     daydfs[[i]] <- p$dayDF[,-1]
   }
 
